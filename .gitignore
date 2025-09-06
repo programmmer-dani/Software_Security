@@ -61,7 +61,8 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-data/
-!data/keys/
-!data/keys/app.key
+data/*.db
+data/*.enc
+data/backups/*
+!data/backups/.gitkeep
 *.log
