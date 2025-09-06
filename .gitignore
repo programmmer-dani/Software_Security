@@ -62,4 +62,6 @@ Thumbs.db
 
 # Project specific
 data/
+!data/keys/
+!data/keys/app.key
 *.log
