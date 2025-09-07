@@ -2,13 +2,13 @@
 
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
-from domain.validators import validate_username, validate_password
-from domain.errors import ValidationError
-from infrastructure.db.user_repo_sqlite import get_by_username_norm, update_password
-from infrastructure.crypto.argon2_hasher import verify, hash
-from infrastructure.logging.sec_logger import log
-from application.security.suspicious import record_failed_login, is_failed_login_suspicious, clear_failed_logins
-from application.security.acl import CurrentUser
+from src.domain.validators import validate_username, validate_password
+from src.domain.errors import ValidationError
+from src.infrastructure.db.user_repo_sqlite import get_by_username_norm, update_password
+from src.infrastructure.crypto.argon2_hasher import verify, hash
+from src.infrastructure.logging.sec_logger import log
+from src.application.security.suspicious import record_failed_login, is_failed_login_suspicious, clear_failed_logins
+from src.application.security.acl import CurrentUser
 
 # Cooldown thresholds
 COOLDOWN_THRESHOLD = 5

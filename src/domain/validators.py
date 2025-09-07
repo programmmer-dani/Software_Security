@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 from .errors import ValidationError
-from infrastructure.config import CITIES, ROTTERDAM_LAT_MIN, ROTTERDAM_LAT_MAX, ROTTERDAM_LON_MIN, ROTTERDAM_LON_MAX
+from src.infrastructure.config import CITIES, ROTTERDAM_LAT_MIN, ROTTERDAM_LAT_MAX, ROTTERDAM_LON_MIN, ROTTERDAM_LON_MAX
 
 def _clean_input(value: str, field: str) -> str:
     if value is None:

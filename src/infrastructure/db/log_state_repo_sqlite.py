@@ -1,7 +1,7 @@
 # src/infrastructure/db/log_state_repo_sqlite.py
 
 from .sqlite import get_conn
-from infrastructure.logging.sec_logger import read_all
+from src.infrastructure.logging.sec_logger import read_all
 
 def get_unread_suspicious_count(user_id: int) -> int:
     conn = get_conn()
