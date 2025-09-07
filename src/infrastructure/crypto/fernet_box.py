@@ -3,7 +3,7 @@
 import os
 from cryptography.fernet import Fernet
 from pathlib import Path
-from infrastructure.config import ENCRYPTION_KEY_FILE
+from src.infrastructure.config import ENCRYPTION_KEY_FILE
 
 def _get_key():
     if ENCRYPTION_KEY_FILE.exists():

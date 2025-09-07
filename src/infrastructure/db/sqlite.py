@@ -2,7 +2,7 @@
 
 import sqlite3
 from pathlib import Path
-from infrastructure.config import DATABASE_FILE
+from src.infrastructure.config import DATABASE_FILE
 
 def get_conn():
     conn = sqlite3.connect(DATABASE_FILE)
@@ -90,8 +90,8 @@ def _seed_super_admin(conn):
         return  # Already exists
     
     # Import here to avoid circular imports
-    from infrastructure.crypto.fernet_box import encrypt
-    from infrastructure.crypto.argon2_hasher import hash
+    from src.infrastructure.crypto.fernet_box import encrypt
+    from src.infrastructure.crypto.argon2_hasher import hash
     from datetime import datetime
     
     # Create super_admin user

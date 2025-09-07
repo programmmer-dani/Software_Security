@@ -1,7 +1,7 @@
 # src/application/security/acl.py
 
 from dataclasses import dataclass
-from domain.errors import ValidationError
+from src.domain.errors import ValidationError
 
 @dataclass
 class CurrentUser:

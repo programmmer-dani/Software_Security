@@ -1,6 +1,6 @@
 # src/um_members.py
 
-from presentation import cli
+from src.presentation import cli
 
 
 def main():

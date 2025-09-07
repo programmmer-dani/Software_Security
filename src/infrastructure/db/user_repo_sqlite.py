@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from .sqlite import get_conn
-from infrastructure.crypto.fernet_box import encrypt, decrypt
+from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
 def get_by_username_norm(username_norm: str):
     conn = get_conn()

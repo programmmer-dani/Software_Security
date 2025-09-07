@@ -3,8 +3,8 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from infrastructure.config import ENCRYPTION_LOGS_FILE
-from infrastructure.crypto.fernet_box import encrypt, decrypt
+from src.infrastructure.config import ENCRYPTION_LOGS_FILE
+from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
 _rowid_counter = 0
 
