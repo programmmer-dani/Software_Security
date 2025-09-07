@@ -28,9 +28,6 @@ def record_failed_login(username: str):
     now = datetime.now()
     _failed_logins[username].append(now)
 
-def is_restore_attempt_suspicious(success: bool) -> bool:
-    return not success
-
 def clear_failed_logins(username: str):
     if username in _failed_logins:
         del _failed_logins[username]

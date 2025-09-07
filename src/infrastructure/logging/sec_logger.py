@@ -6,12 +6,14 @@ from pathlib import Path
 from src.infrastructure.config import ENCRYPTION_LOGS_FILE
 from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
-_rowid_counter = 0
-
 def _get_next_rowid():
-    global _rowid_counter
-    _rowid_counter += 1
-    return _rowid_counter
+    # Get the next rowid by reading existing logs and finding the highest rowid
+    existing_logs = read_all()
+    if not existing_logs:
+        return 1
+    
+    max_rowid = max(log.get('rowid', 0) for log in existing_logs)
+    return max_rowid + 1
 
 def log(event: str, user: str = None, details: dict = None, suspicious: bool = False):
     record = {

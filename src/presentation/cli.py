@@ -103,6 +103,8 @@ def role_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
         return super_admin_menu(current_user)
     elif current_user.role == "SYS_ADMIN":
         return sys_admin_menu(current_user)
+    elif current_user.role == "ENGINEER":
+        return engineer_menu(current_user)
     else:
         print("Access denied. Unknown role.")
         return None
@@ -168,6 +170,31 @@ def sys_admin_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
             return None
         else:
             print("Invalid option. Please choose A-G.")
+
+
+def engineer_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
+    """Engineer menu."""
+    while True:
+        print("\n" + "="*50)
+        print("ENGINEER MENU")
+        print("="*50)
+        print("A) Change My Password")
+        print("B) Add Traveller")
+        print("C) Search Traveller")
+        print("D) Logout")
+        
+        choice = input("\nChoose option (A-D): ").strip().upper()
+        
+        if choice == "A":
+            change_password_flow(current_user)
+        elif choice == "B":
+            add_traveller_flow()
+        elif choice == "C":
+            search_traveller_flow()
+        elif choice == "D":
+            return None
+        else:
+            print("Invalid option. Please choose A-D.")
 
 
 def create_system_admin():
