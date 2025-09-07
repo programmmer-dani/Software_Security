@@ -61,6 +61,14 @@ def migrate():
             )
         """)
         
+        # Log state table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS log_state (
+                user_id INTEGER PRIMARY KEY,
+                last_seen_rowid INTEGER DEFAULT 0
+            )
+        """)
+        
         # Indexes
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_norm ON users(username_norm)")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_travellers_customer_id ON travellers(customer_id)")
