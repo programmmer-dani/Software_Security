@@ -1,0 +1,62 @@
+# src/infrastructure/db/user_repo_sqlite.py
+
+from datetime import datetime
+from .sqlite import get_conn
+from infrastructure.crypto.fernet_box import encrypt, decrypt
+
+def get_by_username_norm(username_norm: str):
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username_norm = ?", (username_norm,))
+        row = cursor.fetchone()
+        
+        if not row:
+            return None
+        
+        # Decrypt sensitive fields
+        return {
+            'id': row[0],
+            'username_norm': row[1],
+            'username': decrypt(row[2]),
+            'pw_hash': row[3],
+            'role': row[4],
+            'first_name': decrypt(row[5]),
+            'last_name': decrypt(row[6]),
+            'registered_at': row[7]
+        }
+    finally:
+        conn.close()
+
+def add(username: str, pw_hash: str, role: str, first_name: str, last_name: str):
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+        username_norm = username.lower()
+        
+        cursor.execute("""
+            INSERT INTO users (username_norm, username_enc, pw_hash, role, first_name_enc, last_name_enc, registered_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            username_norm,
+            encrypt(username),
+            pw_hash,
+            role,
+            encrypt(first_name),
+            encrypt(last_name),
+            datetime.now().isoformat()
+        ))
+        
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+def update_password(user_id: int, new_hash: str):
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (new_hash, user_id))
+        conn.commit()
+    finally:
+        conn.close()
