@@ -24,8 +24,8 @@ def _clean_input(value: str, field: str) -> str:
 def validate_username(username: str) -> str:
     username = _clean_input(username, "Username")
     
-    if not re.match(r'^[A-Za-z_][A-Za-z0-9_\'.]{7,9}$', username):
-        raise ValidationError("Username must be 8-10 chars, start with letter/_ and use [a-z0-9_'.]")
+    if not re.match(r'^[A-Za-z_][A-Za-z0-9_\'.]{7,10}$', username):
+        raise ValidationError("Username must be 8-11 chars, start with letter/_ and use [a-z0-9_'.]")
     
     return username.lower()
 

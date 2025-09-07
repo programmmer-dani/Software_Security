@@ -74,6 +74,10 @@ def login(username: str, password: str) -> CurrentUser:
     )
 
 def change_password(current_user: CurrentUser, old_password: str, new_password: str):
+    # Super admin cannot change password (hardcoded)
+    if current_user.username_norm == "super_admin":
+        raise ValidationError("Super admin password cannot be changed")
+    
     # Get user to verify old password
     user = get_by_username_norm(current_user.username_norm)
     if not user:
