@@ -74,5 +74,36 @@ def migrate():
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_travellers_customer_id ON travellers(customer_id)")
         
         conn.commit()
+        
+        # Seed super_admin user if not exists
+        _seed_super_admin(conn)
+        conn.commit()
     finally:
         conn.close()
+
+def _seed_super_admin(conn):
+    cursor = conn.cursor()
+    
+    # Check if super_admin already exists
+    cursor.execute("SELECT id FROM users WHERE username_norm = ?", ("super_admin",))
+    if cursor.fetchone():
+        return  # Already exists
+    
+    # Import here to avoid circular imports
+    from infrastructure.crypto.fernet_box import encrypt
+    from infrastructure.crypto.argon2_hasher import hash
+    from datetime import datetime
+    
+    # Create super_admin user
+    cursor.execute("""
+        INSERT INTO users (username_norm, username_enc, pw_hash, role, first_name_enc, last_name_enc, registered_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        "super_admin",
+        encrypt("super_admin"),
+        hash("Admin_123?!1"),
+        "SUPER_ADMIN",
+        encrypt(""),
+        encrypt(""),
+        datetime.now().isoformat()
+    ))
