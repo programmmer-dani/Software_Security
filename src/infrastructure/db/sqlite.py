@@ -1,4 +1,4 @@
-A# src/infrastructure/db/sqlite.py
+# src/infrastructure/db/sqlite.py
 
 import sqlite3
 from pathlib import Path
