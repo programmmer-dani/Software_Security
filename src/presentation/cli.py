@@ -347,7 +347,8 @@ def create_backup_flow():
         print(f"Backup created: {backup_name}")
         
     except Exception as e:
-        print("Failed to create backup. Please try again.")
+        print(f"Failed to create backup: {e}")
+        print("Please try again.")
 
 
 def generate_restore_code():
@@ -422,8 +423,13 @@ def restore_from_backup_flow():
         else:
             print("Invalid or used restore code.")
             
+    except FileNotFoundError as e:
+        print(f"Backup not found: {e}")
+    except ValueError as e:
+        print(f"Invalid backup: {e}")
     except Exception as e:
-        print("Failed to restore from backup. Please try again.")
+        print(f"Failed to restore from backup: {e}")
+        print("Please try again.")
 
 
 def view_logs(current_user: CurrentUser):
