@@ -2,10 +2,7 @@
 
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
-
-# Suspicious detection thresholds
-FAILED_LOGIN_THRESHOLD = 3
-FAILED_LOGIN_WINDOW_MINUTES = 5
+from src.domain.policies import FAILED_LOGIN_THRESHOLD, FAILED_LOGIN_WINDOW_MINUTES
 
 # In-memory tracking of failed logins
 _failed_logins = defaultdict(lambda: deque())

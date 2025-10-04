@@ -21,6 +21,12 @@ def hash(pw: str) -> str:
         raise ValueError("Password must be 12-30 characters")
     return _hasher.hash(pw)
 
+def hash_token(token: str) -> str:
+    """Hash a token (like restore codes) without password policy validation."""
+    if not token:
+        raise ValueError("Token cannot be empty")
+    return _hasher.hash(token)
+
 def verify(pw: str, pw_hash: str) -> bool:
     try:
         return _hasher.verify(pw_hash, pw)

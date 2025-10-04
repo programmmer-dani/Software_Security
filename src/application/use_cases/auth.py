@@ -4,9 +4,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from src.domain.validators import validate_username, validate_password
 from src.domain.errors import ValidationError
-from src.infrastructure.db.user_repo_sqlite import get_by_username_norm, update_password
-from src.infrastructure.crypto.argon2_hasher import verify, hash
-from src.infrastructure.logging.sec_logger import log
+from src.domain.policies import can_change_password
 from src.application.security.suspicious import record_failed_login, is_failed_login_suspicious, clear_failed_logins
 from src.application.security.acl import CurrentUser
 
@@ -30,7 +28,7 @@ def _set_cooldown(username: str):
     cooldown_until = datetime.now() + timedelta(minutes=COOLDOWN_MINUTES)
     _cooldowns[username] = cooldown_until
 
-def login(username: str, password: str) -> CurrentUser:
+def login(app, username: str, password: str) -> CurrentUser:
     # Check cooldown first
     if _is_in_cooldown(username):
         raise ValidationError("Please wait a moment before trying again")
@@ -43,21 +41,21 @@ def login(username: str, password: str) -> CurrentUser:
         raise ValidationError("Invalid credentials")
     
     # Get user from database
-    user = get_by_username_norm(username_norm)
+    user = app.user_repo.get_by_username_norm(username_norm)
     if not user:
         raise ValidationError("Invalid credentials")
     
     # Verify password
-    if not verify(password, user['pw_hash']):
+    if not app.password_hasher.verify(password, user['pw_hash']):
         # Record failed attempt
         record_failed_login(username_norm)
         
         # Log failed login
-        log('login_failed', username_norm, {'attempt': 'failed'}, False)
+        app.logger.log('login_failed', username_norm, {'attempt': 'failed'}, False)
         
         # Check if suspicious
         if is_failed_login_suspicious(username_norm):
-            log('suspicious_activity', username_norm, {'reason': 'multiple_failed_logins'}, True)
+            app.logger.log('suspicious_activity', username_norm, {'reason': 'multiple_failed_logins'}, True)
             _set_cooldown(username_norm)
             raise ValidationError("Please wait a moment before trying again")
         
@@ -65,7 +63,7 @@ def login(username: str, password: str) -> CurrentUser:
     
     # Success - clear failed attempts and log
     clear_failed_logins(username_norm)
-    log('login_success', username_norm, {'user_id': user['id']}, False)
+    app.logger.log('login_success', username_norm, {'user_id': user['id']}, False)
     
     return CurrentUser(
         id=user['id'],
@@ -73,18 +71,18 @@ def login(username: str, password: str) -> CurrentUser:
         username_norm=username_norm
     )
 
-def change_password(current_user: CurrentUser, old_password: str, new_password: str):
-    # Super admin cannot change password (hardcoded)
-    if current_user.username_norm == "super_admin":
+def change_password(app, current_user: CurrentUser, old_password: str, new_password: str):
+    # Check policy for password change permission
+    if not can_change_password(current_user.role):
         raise ValidationError("Super admin password cannot be changed")
     
     # Get user to verify old password
-    user = get_by_username_norm(current_user.username_norm)
+    user = app.user_repo.get_by_username_norm(current_user.username_norm)
     if not user:
         raise ValidationError("User not found")
     
     # Verify old password
-    if not verify(old_password, user['pw_hash']):
+    if not app.password_hasher.verify(old_password, user['pw_hash']):
         raise ValidationError("Invalid current password")
     
     # Validate new password
@@ -94,8 +92,8 @@ def change_password(current_user: CurrentUser, old_password: str, new_password: 
         raise ValidationError(f"New password invalid: {e}")
     
     # Hash new password and update
-    new_hash = hash(validated_new_password)
-    update_password(current_user.id, new_hash)
+    new_hash = app.password_hasher.hash(validated_new_password)
+    app.user_repo.update_password(current_user.id, new_hash)
     
     # Log password change
-    log('password_changed', current_user.username_norm, {'user_id': current_user.id}, False)
+    app.logger.log('password_changed', current_user.username_norm, {'user_id': current_user.id}, False)

@@ -28,23 +28,22 @@ def get_by_username_norm(username_norm: str):
     finally:
         conn.close()
 
-def add(username: str, pw_hash: str, role: str, first_name: str, last_name: str):
+def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name: str, registered_at: str):
     conn = get_conn()
     try:
         cursor = conn.cursor()
-        username_norm = username.lower()
         
         cursor.execute("""
             INSERT INTO users (username_norm, username_enc, pw_hash, role, first_name_enc, last_name_enc, registered_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             username_norm,
-            encrypt(username),
+            encrypt(username_norm),  # Use normalized username for encryption
             pw_hash,
             role,
             encrypt(first_name),
             encrypt(last_name),
-            datetime.now().isoformat()
+            registered_at
         ))
         
         conn.commit()

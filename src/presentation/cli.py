@@ -3,35 +3,26 @@ from datetime import datetime
 from typing import Optional
 
 from src.application.security.acl import CurrentUser
-from src.application.use_cases.auth import login, change_password
 from src.domain.errors import ValidationError
 from src.domain.validators import (
     validate_username, validate_password, validate_zip, validate_phone,
     validate_license, validate_gender, validate_city, validate_birthday
 )
-from src.infrastructure.db.sqlite import migrate
-from src.infrastructure.db.user_repo_sqlite import add as add_user, get_by_username_norm
-from src.infrastructure.db.traveller_repo_sqlite import add as add_traveller, all as get_all_travellers
-from src.infrastructure.db.restore_code_repo_sqlite import insert as insert_restore_code, consume as consume_restore_code
-from src.infrastructure.db.log_state_repo_sqlite import get_unread_suspicious_count, mark_all_seen
-from src.infrastructure.logging.sec_logger import read_all
-from src.infrastructure.backup.zip_store import create_backup, restore_from_backup
+from src.domain.constants import ROLES
 
 
-def run():
+def run(app):
     """Main application entry point."""
-    migrate()
-    
     current_user: Optional[CurrentUser] = None
     
     while True:
         if current_user is None:
-            current_user = main_menu()
+            current_user = main_menu(app)
         else:
-            current_user = role_menu(current_user)
+            current_user = role_menu(app, current_user)
 
 
-def main_menu() -> Optional[CurrentUser]:
+def main_menu(app) -> Optional[CurrentUser]:
     """Main menu for unauthenticated users."""
     while True:
         print("\n" + "="*50)
@@ -43,7 +34,7 @@ def main_menu() -> Optional[CurrentUser]:
         choice = input("\nChoose option (1-2): ").strip()
         
         if choice == "1":
-            return login_flow()
+            return login_flow(app)
         elif choice == "2":
             print("Goodbye!")
             sys.exit(0)
@@ -51,7 +42,7 @@ def main_menu() -> Optional[CurrentUser]:
             print("Invalid option. Please choose 1 or 2.")
 
 
-def login_flow() -> Optional[CurrentUser]:
+def login_flow(app) -> Optional[CurrentUser]:
     """Handle user login."""
     print("\n" + "-"*30)
     print("LOGIN")
@@ -74,13 +65,13 @@ def login_flow() -> Optional[CurrentUser]:
             print(f"Invalid username: {e}")
             return None
         
-        user = login(username, password)
+        user = app.login(username, password)
         
         if user:
             print(f"\nWelcome, {user.role}!")
             
-            if user.role in ["SUPER_ADMIN", "SYS_ADMIN"]:
-                unread_count = get_unread_suspicious_count(user.id)
+            if user.role in [ROLES[0], ROLES[1]]:  # SUPER_ADMIN, SYS_ADMIN
+                unread_count = app.get_unread_suspicious_count(user)
                 if unread_count > 0:
                     print(f"⚠ You have {unread_count} unread suspicious events.")
             
@@ -97,20 +88,20 @@ def login_flow() -> Optional[CurrentUser]:
         return None
 
 
-def role_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
+def role_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
     """Role-based menu system."""
-    if current_user.role == "SUPER_ADMIN":
-        return super_admin_menu(current_user)
-    elif current_user.role == "SYS_ADMIN":
-        return sys_admin_menu(current_user)
-    elif current_user.role == "ENGINEER":
-        return engineer_menu(current_user)
+    if current_user.role == ROLES[0]:  # SUPER_ADMIN
+        return super_admin_menu(app, current_user)
+    elif current_user.role == ROLES[1]:  # SYS_ADMIN
+        return sys_admin_menu(app, current_user)
+    elif current_user.role == ROLES[2]:  # ENGINEER
+        return engineer_menu(app, current_user)
     else:
         print("Access denied. Unknown role.")
         return None
 
 
-def super_admin_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
+def super_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
     """Super Admin menu."""
     while True:
         print("\n" + "="*50)
@@ -125,20 +116,20 @@ def super_admin_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
         choice = input("\nChoose option (A-E): ").strip().upper()
         
         if choice == "A":
-            create_system_admin()
+            create_system_admin(app, current_user)
         elif choice == "B":
-            generate_restore_code()
+            generate_restore_code(app, current_user)
         elif choice == "C":
-            create_backup_flow()
+            create_backup_flow(app, current_user)
         elif choice == "D":
-            view_logs(current_user)
+            view_logs(app, current_user)
         elif choice == "E":
             return None
         else:
             print("Invalid option. Please choose A-E.")
 
 
-def sys_admin_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
+def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
     """System Admin menu."""
     while True:
         print("\n" + "="*50)
@@ -155,24 +146,24 @@ def sys_admin_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
         choice = input("\nChoose option (A-G): ").strip().upper()
         
         if choice == "A":
-            change_password_flow(current_user)
+            change_password_flow(app, current_user)
         elif choice == "B":
-            add_traveller_flow()
+            add_traveller_flow(app, current_user)
         elif choice == "C":
-            search_traveller_flow()
+            search_traveller_flow(app, current_user)
         elif choice == "D":
-            restore_from_backup_flow()
+            restore_from_backup_flow(app, current_user)
         elif choice == "E":
-            create_backup_flow()
+            create_backup_flow(app, current_user)
         elif choice == "F":
-            view_logs(current_user)
+            view_logs(app, current_user)
         elif choice == "G":
             return None
         else:
             print("Invalid option. Please choose A-G.")
 
 
-def engineer_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
+def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
     """Engineer menu."""
     while True:
         print("\n" + "="*50)
@@ -186,18 +177,18 @@ def engineer_menu(current_user: CurrentUser) -> Optional[CurrentUser]:
         choice = input("\nChoose option (A-D): ").strip().upper()
         
         if choice == "A":
-            change_password_flow(current_user)
+            change_password_flow(app, current_user)
         elif choice == "B":
-            add_traveller_flow()
+            add_traveller_flow(app, current_user)
         elif choice == "C":
-            search_traveller_flow()
+            search_traveller_flow(app, current_user)
         elif choice == "D":
             return None
         else:
             print("Invalid option. Please choose A-D.")
 
 
-def create_system_admin():
+def create_system_admin(app, current_user: CurrentUser):
     """Create a new System Admin user."""
     print("\n" + "-"*30)
     print("CREATE SYSTEM ADMIN")
@@ -217,23 +208,7 @@ def create_system_admin():
         first_name = input("First name: ").strip()
         last_name = input("Last name: ").strip()
         
-        username = validate_username(username)
-        validate_password(password)
-        
-        from src.infrastructure.crypto.fernet_box import encrypt
-        from src.infrastructure.crypto.argon2_hasher import hash
-        
-        user_data = {
-            'username_norm': username,
-            'username_enc': encrypt(username),
-            'pw_hash': hash(password),
-            'role': 'SYS_ADMIN',
-            'first_name_enc': encrypt(first_name) if first_name else encrypt(""),
-            'last_name_enc': encrypt(last_name) if last_name else encrypt(""),
-            'registered_at': datetime.now().isoformat()
-        }
-        
-        add_user(user_data)
+        app.create_sys_admin(current_user, username, password, first_name, last_name)
         print("System Admin created successfully!")
         
     except ValidationError as e:
@@ -242,7 +217,7 @@ def create_system_admin():
         print("Failed to create System Admin. Please try again.")
 
 
-def change_password_flow(current_user: CurrentUser):
+def change_password_flow(app, current_user: CurrentUser):
     """Handle password change."""
     print("\n" + "-"*30)
     print("CHANGE PASSWORD")
@@ -259,7 +234,7 @@ def change_password_flow(current_user: CurrentUser):
             print("New password cannot be empty.")
             return
         
-        change_password(current_user, old_password, new_password)
+        app.change_password(current_user, old_password, new_password)
         print("Password changed successfully!")
         
     except ValidationError as e:
@@ -268,7 +243,7 @@ def change_password_flow(current_user: CurrentUser):
         print("Failed to change password. Please try again.")
 
 
-def add_traveller_flow():
+def add_traveller_flow(app, current_user: CurrentUser):
     """Add a new traveller."""
     print("\n" + "-"*30)
     print("ADD TRAVELLER")
@@ -287,33 +262,20 @@ def add_traveller_flow():
         phone = input("Phone (8 digits): ").strip()
         license_no = input("Driving license: ").strip()
         
-        validate_birthday(birthday)
-        gender = validate_gender(gender)
-        zip_code = validate_zip(zip_code)
-        city = validate_city(city)
-        phone = validate_phone(phone)
-        license_no = validate_license(license_no)
-        
-        from src.infrastructure.crypto.fernet_box import encrypt
-        customer_id = f"CUST_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        traveller_data = {
-            'customer_id': customer_id,
-            'first_name_enc': encrypt(first_name),
-            'last_name_enc': encrypt(last_name),
-            'birthday': birthday,
-            'gender': gender,
-            'street_enc': encrypt(street),
-            'house_no_enc': encrypt(house_no),
-            'zip_enc': encrypt(zip_code),
-            'city': city,
-            'email_enc': encrypt(email),
-            'phone_enc': encrypt(phone),
-            'license_enc': encrypt(license_no),
-            'registered_at': datetime.now().isoformat()
-        }
-        
-        add_traveller(traveller_data)
+        customer_id = app.add_traveller(
+            current_user=current_user,
+            first_name=first_name,
+            last_name=last_name,
+            birthday=birthday,
+            gender=gender,
+            street=street,
+            house_no=house_no,
+            zip_code=zip_code,
+            city=city,
+            email=email,
+            phone=phone,
+            license_no=license_no
+        )
         print(f"Traveller added successfully! Customer ID: {customer_id}")
         
     except ValidationError as e:
@@ -322,7 +284,7 @@ def add_traveller_flow():
         print("Failed to add traveller. Please try again.")
 
 
-def search_traveller_flow():
+def search_traveller_flow(app, current_user: CurrentUser):
     """Search for travellers."""
     print("\n" + "-"*30)
     print("SEARCH TRAVELLER")
@@ -335,26 +297,14 @@ def search_traveller_flow():
         return
     
     try:
-        travellers = get_all_travellers()
-        from src.infrastructure.crypto.fernet_box import decrypt
-        
-        matches = []
-        for traveller in travellers:
-            first_name = decrypt(traveller['first_name_enc'])
-            last_name = decrypt(traveller['last_name_enc'])
-            customer_id = traveller['customer_id']
-            
-            if (search_term.lower() in first_name.lower() or 
-                search_term.lower() in last_name.lower() or 
-                search_term.lower() in customer_id.lower()):
-                matches.append(traveller)
+        matches = app.search_travellers(current_user, search_term)
         
         if matches:
             print(f"\nFound {len(matches)} traveller(s):")
             print("-" * 60)
             for traveller in matches:
-                first_name = decrypt(traveller['first_name_enc'])
-                last_name = decrypt(traveller['last_name_enc'])
+                first_name = app.crypto.decrypt(traveller['first_name_enc'])
+                last_name = app.crypto.decrypt(traveller['last_name_enc'])
                 print(f"ID: {traveller['id']} | Customer: {traveller['customer_id']} | Name: {first_name} {last_name}")
         else:
             print("No travellers found matching your search.")
@@ -363,14 +313,14 @@ def search_traveller_flow():
         print("Failed to search travellers. Please try again.")
 
 
-def create_backup_flow():
+def create_backup_flow(app, current_user: CurrentUser):
     """Create a backup."""
     print("\n" + "-"*30)
     print("CREATE BACKUP")
     print("-"*30)
     
     try:
-        backup_name = create_backup()
+        backup_name = app.create_backup(current_user)
         print(f"Backup created: {backup_name}")
         
     except Exception as e:
@@ -378,7 +328,7 @@ def create_backup_flow():
         print("Please try again.")
 
 
-def generate_restore_code():
+def generate_restore_code(app, current_user: CurrentUser):
     """Generate a restore code for Super Admin."""
     print("\n" + "-"*30)
     print("GENERATE RESTORE CODE")
@@ -395,20 +345,7 @@ def generate_restore_code():
             print("Username cannot be empty.")
             return
         
-        target_username = validate_username(target_username)
-        
-        target_user = get_by_username_norm(target_username)
-        if not target_user:
-            print("Target user not found.")
-            return
-        
-        import secrets
-        restore_code = secrets.token_urlsafe(32)
-        
-        from src.infrastructure.crypto.argon2_hasher import hash
-        code_hash = hash(restore_code)
-        
-        insert_restore_code(backup_name, target_user['id'], code_hash)
+        restore_code = app.generate_restore_code(current_user, backup_name, target_username)
         
         print("\n" + "="*60)
         print("SAVE THIS CODE NOW - IT WON'T BE SHOWN AGAIN!")
@@ -422,7 +359,7 @@ def generate_restore_code():
         print("Failed to generate restore code. Please try again.")
 
 
-def restore_from_backup_flow():
+def restore_from_backup_flow(app, current_user: CurrentUser):
     """Restore from backup using a code."""
     print("\n" + "-"*30)
     print("RESTORE FROM BACKUP")
@@ -439,13 +376,9 @@ def restore_from_backup_flow():
             print("Restore code cannot be empty.")
             return
         
-        from src.infrastructure.crypto.argon2_hasher import hash
-        code_hash = hash(restore_code)
-        
-        success = consume_restore_code(1, backup_name, code_hash)
+        success = app.restore_with_code(current_user, backup_name, restore_code)
         
         if success:
-            restore_from_backup(backup_name)
             print("Restore complete.")
         else:
             print("Invalid or used restore code.")
@@ -459,14 +392,14 @@ def restore_from_backup_flow():
         print("Please try again.")
 
 
-def view_logs(current_user: CurrentUser):
+def view_logs(app, current_user: CurrentUser):
     """View audit logs."""
     print("\n" + "-"*30)
     print("AUDIT LOGS")
     print("-"*30)
     
     try:
-        logs = read_all()
+        logs = app.view_logs(current_user)
         
         if not logs:
             print("No logs found.")
@@ -485,7 +418,7 @@ def view_logs(current_user: CurrentUser):
             
             print(f"{date_str:<20} {user:<15} {event:<20} {suspicious:<10}")
         
-        mark_all_seen(current_user.id)
+        app.mark_all_seen(current_user)
         print("\nMarked as read.")
         
     except Exception as e:

@@ -3,6 +3,7 @@
 import sqlite3
 from pathlib import Path
 from src.infrastructure.config import DATABASE_FILE
+from src.domain.constants import ROLES
 
 def get_conn():
     conn = sqlite3.connect(DATABASE_FILE)
@@ -16,13 +17,13 @@ def migrate():
     conn = get_conn()
     try:
         # Users table
-        conn.execute("""
+        conn.execute(f"""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username_norm TEXT UNIQUE NOT NULL,
                 username_enc TEXT NOT NULL,
                 pw_hash TEXT NOT NULL,
-                role TEXT CHECK(role IN ('SUPER_ADMIN','SYS_ADMIN','ENGINEER')) NOT NULL,
+                role TEXT CHECK(role IN ('{ROLES[0]}','{ROLES[1]}','{ROLES[2]}')) NOT NULL,
                 first_name_enc TEXT NOT NULL,
                 last_name_enc TEXT NOT NULL,
                 registered_at TEXT NOT NULL
@@ -102,7 +103,7 @@ def _seed_super_admin(conn):
         "super_admin",
         encrypt("super_admin"),
         hash("Admin_123?!1"),
-        "SUPER_ADMIN",
+        ROLES[0],  # SUPER_ADMIN
         encrypt(""),
         encrypt(""),
         datetime.now().isoformat()

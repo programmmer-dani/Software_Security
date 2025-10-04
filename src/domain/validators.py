@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 from .errors import ValidationError
-from src.infrastructure.config import CITIES, ROTTERDAM_LAT_MIN, ROTTERDAM_LAT_MAX, ROTTERDAM_LON_MIN, ROTTERDAM_LON_MAX
+from .constants import CITIES, ROTTERDAM_BOUNDS
 
 def _clean_input(value: str, field: str) -> str:
     if value is None:
@@ -63,7 +63,7 @@ def validate_phone(phone: str) -> str:
     if not re.match(r'^\d{8}$', phone):
         raise ValidationError("Phone must be exactly 8 digits")
     
-    return f"+31-6-{phone}"
+    return phone
 
 def validate_license(license_num: str) -> str:
     license_num = _clean_input(license_num, "License")
@@ -112,8 +112,8 @@ def validate_latitude(lat: float) -> float:
     if not isinstance(lat, (int, float)):
         raise ValidationError("Latitude must be a number")
     
-    if not (ROTTERDAM_LAT_MIN <= lat <= ROTTERDAM_LAT_MAX):
-        raise ValidationError(f"Latitude must be {ROTTERDAM_LAT_MIN}-{ROTTERDAM_LAT_MAX}")
+    if not (ROTTERDAM_BOUNDS["lat_min"] <= lat <= ROTTERDAM_BOUNDS["lat_max"]):
+        raise ValidationError(f"Latitude must be {ROTTERDAM_BOUNDS['lat_min']}-{ROTTERDAM_BOUNDS['lat_max']}")
     
     return round(lat, 5)
 
@@ -121,7 +121,7 @@ def validate_longitude(lon: float) -> float:
     if not isinstance(lon, (int, float)):
         raise ValidationError("Longitude must be a number")
     
-    if not (ROTTERDAM_LON_MIN <= lon <= ROTTERDAM_LON_MAX):
-        raise ValidationError(f"Longitude must be {ROTTERDAM_LON_MIN}-{ROTTERDAM_LON_MAX}")
+    if not (ROTTERDAM_BOUNDS["lon_min"] <= lon <= ROTTERDAM_BOUNDS["lon_max"]):
+        raise ValidationError(f"Longitude must be {ROTTERDAM_BOUNDS['lon_min']}-{ROTTERDAM_BOUNDS['lon_max']}")
     
     return round(lon, 5)

@@ -5,7 +5,7 @@ from .sqlite import get_conn
 from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
 def add(customer_id: str, first_name: str, last_name: str, birthday: str, gender: str,
-        street: str, house_no: str, zip_code: str, city: str, email: str, phone: str, license: str):
+        street: str, house_no: str, zip_code: str, city: str, email: str, phone: str, license: str, registered_at: str):
     conn = get_conn()
     try:
         cursor = conn.cursor()
@@ -27,7 +27,7 @@ def add(customer_id: str, first_name: str, last_name: str, birthday: str, gender
             encrypt(email),
             encrypt(phone),
             encrypt(license),
-            datetime.now().isoformat()
+            registered_at
         ))
         
         conn.commit()
