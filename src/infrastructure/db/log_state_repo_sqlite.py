@@ -1,11 +1,10 @@
 # src/infrastructure/db/log_state_repo_sqlite.py
 
-from .sqlite import get_conn
+from .sqlite import db_connection, db_transaction
 from src.infrastructure.logging.sec_logger import read_all
 
 def get_unread_suspicious_count(user_id: int) -> int:
-    conn = get_conn()
-    try:
+    with db_connection() as conn:
         cursor = conn.cursor()
         
         # Get last seen rowid for this user
@@ -21,12 +20,9 @@ def get_unread_suspicious_count(user_id: int) -> int:
                 count += 1
         
         return count
-    finally:
-        conn.close()
 
 def mark_all_seen(user_id: int):
-    conn = get_conn()
-    try:
+    with db_transaction() as conn:
         cursor = conn.cursor()
         
         # Get latest rowid from logs
@@ -38,7 +34,3 @@ def mark_all_seen(user_id: int):
             INSERT OR REPLACE INTO log_state (user_id, last_seen_rowid)
             VALUES (?, ?)
         """, (user_id, latest_rowid))
-        
-        conn.commit()
-    finally:
-        conn.close()

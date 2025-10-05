@@ -1,12 +1,11 @@
 # src/infrastructure/db/user_repo_sqlite.py
 
 from datetime import datetime
-from .sqlite import get_conn
+from .sqlite import db_connection
 from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
 def get_by_username_norm(username_norm: str):
-    conn = get_conn()
-    try:
+    with db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username_norm = ?", (username_norm,))
         row = cursor.fetchone()
@@ -25,12 +24,10 @@ def get_by_username_norm(username_norm: str):
             'last_name': decrypt(row[6]),
             'registered_at': row[7]
         }
-    finally:
-        conn.close()
 
 def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name: str, registered_at: str):
-    conn = get_conn()
-    try:
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -46,16 +43,10 @@ def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name:
             registered_at
         ))
         
-        conn.commit()
         return cursor.lastrowid
-    finally:
-        conn.close()
 
 def update_password(user_id: int, new_hash: str):
-    conn = get_conn()
-    try:
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (new_hash, user_id))
-        conn.commit()
-    finally:
-        conn.close()

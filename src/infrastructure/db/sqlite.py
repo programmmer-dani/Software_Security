@@ -2,20 +2,45 @@
 
 import sqlite3
 from pathlib import Path
+from contextlib import contextmanager
 from src.infrastructure.config import DATABASE_FILE
 from src.domain.constants import ROLES
 
 def get_conn():
+    """Get a new database connection."""
     conn = sqlite3.connect(DATABASE_FILE)
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA journal_mode = WAL")
-    conn.execute("PRAGMA busy_timeout = 30000")
-    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
-def migrate():
+@contextmanager
+def db_connection():
+    """Context manager for database connections - automatically closes."""
     conn = get_conn()
     try:
+        yield conn
+    finally:
+        conn.close()
+
+@contextmanager
+def db_transaction():
+    """Context manager for database transactions - automatically commits/rollbacks."""
+    conn = get_conn()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def close_all_connections():
+    """Force close all database connections to release file locks."""
+    # SQLite doesn't provide a direct way to close all connections
+    # This is mainly for backup/restore operations
+    pass
+
+def migrate():
+    with db_transaction() as conn:
         # Users table
         conn.execute(f"""
             CREATE TABLE IF NOT EXISTS users (
@@ -74,13 +99,8 @@ def migrate():
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_norm ON users(username_norm)")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_travellers_customer_id ON travellers(customer_id)")
         
-        conn.commit()
-        
         # Seed super_admin user if not exists
         _seed_super_admin(conn)
-        conn.commit()
-    finally:
-        conn.close()
 
 def _seed_super_admin(conn):
     cursor = conn.cursor()
@@ -100,7 +120,7 @@ def _seed_super_admin(conn):
         INSERT INTO users (username_norm, username_enc, pw_hash, role, first_name_enc, last_name_enc, registered_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
-        "super_admin",
+        "super_admin",  # Store as-is, no normalization
         encrypt("super_admin"),
         hash("Admin_123?!1"),
         ROLES[0],  # SUPER_ADMIN

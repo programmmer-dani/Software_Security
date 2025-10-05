@@ -34,8 +34,10 @@ def login(app, username: str, password: str) -> CurrentUser:
         raise ValidationError("Please wait a moment before trying again")
     
     try:
-        # Validate and normalize username
-        username_norm = validate_username(username)
+        # Validate username first
+        validate_username(username)
+        # Use validated username as-is for lookup
+        username_norm = username
     except ValidationError:
         # Don't reveal if username format is wrong vs user doesn't exist
         raise ValidationError("Invalid credentials")

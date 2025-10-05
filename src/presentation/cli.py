@@ -31,7 +31,7 @@ def main_menu(app) -> Optional[CurrentUser]:
         print("1) Login")
         print("2) Exit")
         
-        choice = input("\nChoose option (1-2): ").strip()
+        choice = input("\nChoose option (1-2): ")
         
         if choice == "1":
             return login_flow(app)
@@ -49,12 +49,12 @@ def login_flow(app) -> Optional[CurrentUser]:
     print("-"*30)
     
     try:
-        username = input("Username: ").strip()
+        username = input("Username: ")
         if not username:
             print("Username cannot be empty.")
             return None
             
-        password = input("Password: ").strip()
+        password = input("Password: ")
         if not password:
             print("Password cannot be empty.")
             return None
@@ -110,10 +110,11 @@ def super_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("A) Create System Admin")
         print("B) Generate Restore Code")
         print("C) Create Backup")
-        print("D) View Logs")
-        print("E) Logout")
+        print("D) Restore Backup (Direct)")
+        print("E) View Logs")
+        print("F) Logout")
         
-        choice = input("\nChoose option (A-E): ").strip().upper()
+        choice = input("\nChoose option (A-F): ")
         
         if choice == "A":
             create_system_admin(app, current_user)
@@ -122,11 +123,13 @@ def super_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "C":
             create_backup_flow(app, current_user)
         elif choice == "D":
-            view_logs(app, current_user)
+            restore_backup_direct(app, current_user)
         elif choice == "E":
+            view_logs(app, current_user)
+        elif choice == "F":
             return None
         else:
-            print("Invalid option. Please choose A-E.")
+            print("Invalid option. Please choose A-F.")
 
 
 def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
@@ -138,12 +141,12 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("A) Change My Password")
         print("B) Add Traveller")
         print("C) Search Traveller")
-        print("D) Restore from Backup")
+        print("D) Restore from Backup (with code)")
         print("E) Create Backup")
         print("F) View Logs")
         print("G) Logout")
         
-        choice = input("\nChoose option (A-G): ").strip().upper()
+        choice = input("\nChoose option (A-G): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -152,7 +155,7 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "C":
             search_traveller_flow(app, current_user)
         elif choice == "D":
-            restore_from_backup_flow(app, current_user)
+            restore_from_backup_with_code_flow(app, current_user)
         elif choice == "E":
             create_backup_flow(app, current_user)
         elif choice == "F":
@@ -174,7 +177,7 @@ def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("C) Search Traveller")
         print("D) Logout")
         
-        choice = input("\nChoose option (A-D): ").strip().upper()
+        choice = input("\nChoose option (A-D): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -195,18 +198,18 @@ def create_system_admin(app, current_user: CurrentUser):
     print("-"*30)
     
     try:
-        username = input("Username: ").strip()
+        username = input("Username: ")
         if not username:
             print("Username cannot be empty.")
             return
         
-        password = input("Password: ").strip()
+        password = input("Password: ")
         if not password:
             print("Password cannot be empty.")
             return
         
-        first_name = input("First name: ").strip()
-        last_name = input("Last name: ").strip()
+        first_name = input("First name: ")
+        last_name = input("Last name: ")
         
         app.create_sys_admin(current_user, username, password, first_name, last_name)
         print("System Admin created successfully!")
@@ -224,12 +227,12 @@ def change_password_flow(app, current_user: CurrentUser):
     print("-"*30)
     
     try:
-        old_password = input("Current password: ").strip()
+        old_password = input("Current password: ")
         if not old_password:
             print("Current password cannot be empty.")
             return
         
-        new_password = input("New password: ").strip()
+        new_password = input("New password: ")
         if not new_password:
             print("New password cannot be empty.")
             return
@@ -250,17 +253,17 @@ def add_traveller_flow(app, current_user: CurrentUser):
     print("-"*30)
     
     try:
-        first_name = input("First name: ").strip()
-        last_name = input("Last name: ").strip()
-        birthday = input("Birthday (YYYY-MM-DD): ").strip()
-        gender = input("Gender (male/female): ").strip()
-        street = input("Street: ").strip()
-        house_no = input("House number: ").strip()
-        zip_code = input("ZIP code (DDDDXX): ").strip()
-        city = input("City: ").strip()
-        email = input("Email: ").strip()
-        phone = input("Phone (8 digits): ").strip()
-        license_no = input("Driving license: ").strip()
+        first_name = input("First name: ")
+        last_name = input("Last name: ")
+        birthday = input("Birthday (YYYY-MM-DD): ")
+        gender = input("Gender (male/female): ")
+        street = input("Street: ")
+        house_no = input("House number: ")
+        zip_code = input("ZIP code (DDDDXX): ")
+        city = input("City: ")
+        email = input("Email: ")
+        phone = input("Phone (8 digits): ")
+        license_no = input("Driving license: ")
         
         customer_id = app.add_traveller(
             current_user=current_user,
@@ -291,7 +294,7 @@ def search_traveller_flow(app, current_user: CurrentUser):
     print("-"*30)
     print("Enter partial search term (name, customer ID, etc.)")
     
-    search_term = input("Search: ").strip()
+    search_term = input("Search: ")
     if not search_term:
         print("Search term cannot be empty.")
         return
@@ -335,12 +338,12 @@ def generate_restore_code(app, current_user: CurrentUser):
     print("-"*30)
     
     try:
-        backup_name = input("Backup name: ").strip()
+        backup_name = input("Backup name: ")
         if not backup_name:
             print("Backup name cannot be empty.")
             return
         
-        target_username = input("Target SysAdmin username: ").strip()
+        target_username = input("Target SysAdmin username: ")
         if not target_username:
             print("Username cannot be empty.")
             return
@@ -366,12 +369,12 @@ def restore_from_backup_flow(app, current_user: CurrentUser):
     print("-"*30)
     
     try:
-        backup_name = input("Backup name: ").strip()
+        backup_name = input("Backup name: ")
         if not backup_name:
             print("Backup name cannot be empty.")
             return
         
-        restore_code = input("Restore code: ").strip()
+        restore_code = input("Restore code: ")
         if not restore_code:
             print("Restore code cannot be empty.")
             return
@@ -390,6 +393,61 @@ def restore_from_backup_flow(app, current_user: CurrentUser):
     except Exception as e:
         print(f"Failed to restore from backup: {e}")
         print("Please try again.")
+
+
+def restore_backup_direct(app, current_user: CurrentUser):
+    """Restore backup directly (SUPER_ADMIN only)."""
+    print("\n" + "-"*30)
+    print("RESTORE BACKUP (DIRECT)")
+    print("-"*30)
+    
+    try:
+        backup_name = input("Backup name: ")
+        if not backup_name:
+            print("Backup name cannot be empty.")
+            return
+        
+        success = app.restore_any_backup(current_user, backup_name)
+        
+        if success:
+            print("Backup restored successfully!")
+        else:
+            print("Restore failed.")
+            
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
+
+def restore_from_backup_with_code_flow(app, current_user: CurrentUser):
+    """Restore from backup using a code (SYS_ADMIN only)."""
+    print("\n" + "-"*30)
+    print("RESTORE FROM BACKUP (WITH CODE)")
+    print("-"*30)
+    
+    try:
+        backup_name = input("Backup name: ")
+        if not backup_name:
+            print("Backup name cannot be empty.")
+            return
+        
+        restore_code = input("Restore code: ")
+        if not restore_code:
+            print("Restore code cannot be empty.")
+            return
+        
+        success = app.restore_with_code(current_user, backup_name, restore_code)
+        
+        if success:
+            print("Backup restored successfully!")
+        else:
+            print("Restore failed. Invalid restore code or backup not found.")
+            
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
 
 def view_logs(app, current_user: CurrentUser):

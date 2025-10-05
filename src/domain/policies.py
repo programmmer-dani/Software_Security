@@ -18,9 +18,17 @@ def can_generate_restore_code(role: str) -> bool:
     """Only SUPER_ADMIN can generate restore codes."""
     return role == ROLES[0]  # SUPER_ADMIN
 
-def can_restore_backup(role: str) -> bool:
-    """SYS_ADMIN can restore backups with valid code."""
+def can_restore_any_backup(role: str) -> bool:
+    """Only SUPER_ADMIN can restore any backup directly (no restore code needed)."""
+    return role == ROLES[0]  # SUPER_ADMIN
+
+def can_restore_with_code(role: str) -> bool:
+    """Only SYS_ADMIN can restore using a restore code."""
     return role == ROLES[1]  # SYS_ADMIN
+
+def can_consume_restore_code(role: str) -> bool:
+    """Only SYS_ADMIN can consume restore codes. SUPER_ADMIN cannot."""
+    return role == ROLES[1]  # SYS_ADMIN only
 
 def can_change_password(role: str) -> bool:
     """Super admin cannot change password, others can."""

@@ -9,7 +9,7 @@ def _clean_input(value: str, field: str) -> str:
     if value is None:
         raise ValidationError(f"{field} cannot be empty")
     
-    value = str(value).strip()
+    value = str(value)
     if not value:
         raise ValidationError(f"{field} cannot be empty")
     
@@ -27,7 +27,7 @@ def validate_username(username: str) -> str:
     if not re.match(r'^[A-Za-z_][A-Za-z0-9_\'.]{7,10}$', username):
         raise ValidationError("Username must be 8-11 chars, start with letter/_ and use [a-z0-9_'.]")
     
-    return username.lower()
+    return username
 
 def validate_password(password: str) -> str:
     password = _clean_input(password, "Password")
@@ -76,18 +76,27 @@ def validate_license(license_num: str) -> str:
 def validate_gender(gender: str) -> str:
     gender = _clean_input(gender, "Gender")
     
-    if gender.lower() not in ['male', 'female']:
+    if gender not in ['male', 'female', 'Male', 'Female', 'MALE', 'FEMALE']:
         raise ValidationError("Gender must be 'male' or 'female'")
     
-    return gender.lower()
+    return gender
 
 def validate_city(city: str) -> str:
     city = _clean_input(city, "City")
     
-    if city not in CITIES:
+    # Case-insensitive city validation
+    city_lower = city.lower()
+    valid_cities_lower = [c.lower() for c in CITIES]
+    
+    if city_lower not in valid_cities_lower:
         raise ValidationError(f"City must be one of: {', '.join(CITIES)}")
     
-    return city
+    # Return the original case from CITIES list
+    for valid_city in CITIES:
+        if valid_city.lower() == city_lower:
+            return valid_city
+    
+    return city  # fallback
 
 def validate_birthday(birthday: str) -> str:
     birthday = _clean_input(birthday, "Birthday")
@@ -115,6 +124,10 @@ def validate_latitude(lat: float) -> float:
     if not (ROTTERDAM_BOUNDS["lat_min"] <= lat <= ROTTERDAM_BOUNDS["lat_max"]):
         raise ValidationError(f"Latitude must be {ROTTERDAM_BOUNDS['lat_min']}-{ROTTERDAM_BOUNDS['lat_max']}")
     
+    return lat
+
+def normalize_latitude(lat: float) -> float:
+    """Normalize latitude to 5 decimal places for storage."""
     return round(lat, 5)
 
 def validate_longitude(lon: float) -> float:
@@ -124,4 +137,8 @@ def validate_longitude(lon: float) -> float:
     if not (ROTTERDAM_BOUNDS["lon_min"] <= lon <= ROTTERDAM_BOUNDS["lon_max"]):
         raise ValidationError(f"Longitude must be {ROTTERDAM_BOUNDS['lon_min']}-{ROTTERDAM_BOUNDS['lon_max']}")
     
+    return lon
+
+def normalize_longitude(lon: float) -> float:
+    """Normalize longitude to 5 decimal places for storage."""
     return round(lon, 5)

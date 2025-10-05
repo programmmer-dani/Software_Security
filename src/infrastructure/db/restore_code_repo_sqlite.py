@@ -1,12 +1,11 @@
 # src/infrastructure/db/restore_code_repo_sqlite.py
 
 from datetime import datetime
-from .sqlite import get_conn
+from .sqlite import db_connection, db_transaction
 from src.infrastructure.crypto.argon2_hasher import verify
 
 def insert(backup_name: str, user_id: int, code_hash: str):
-    conn = get_conn()
-    try:
+    with db_transaction() as conn:
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -14,14 +13,10 @@ def insert(backup_name: str, user_id: int, code_hash: str):
             VALUES (?, ?, ?, 0, ?)
         """, (backup_name, user_id, code_hash, datetime.now().isoformat()))
         
-        conn.commit()
         return cursor.lastrowid
-    finally:
-        conn.close()
 
 def consume(user_id: int, backup_name: str, candidate_code: str):
-    conn = get_conn()
-    try:
+    with db_transaction() as conn:
         cursor = conn.cursor()
         
         # Find unused codes for this user and backup
@@ -38,9 +33,6 @@ def consume(user_id: int, backup_name: str, candidate_code: str):
             if verify(candidate_code, stored_hash):
                 # Mark as used atomically
                 cursor.execute("UPDATE restore_codes SET used = 1 WHERE id = ?", (code_id,))
-                conn.commit()
                 return True
         
         return False
-    finally:
-        conn.close()

@@ -8,7 +8,7 @@ from src.domain.validators import validate_username, validate_password, validate
 from src.domain.errors import ValidationError
 from src.domain.constants import ROLES
 from src.domain.models import User, Traveller, RestoreCode
-from src.domain.policies import can_create_sys_admin, can_create_backup, can_generate_restore_code, can_restore_backup
+from src.domain.policies import can_create_sys_admin, can_create_backup, can_generate_restore_code, can_restore_any_backup, can_restore_with_code, can_consume_restore_code
 from src.domain.services import generate_customer_id
 from src.application.ports.user_repo import UserRepo
 from src.application.ports.traveller_repo import TravellerRepo
@@ -46,8 +46,11 @@ class App:
             raise ValidationError("Access denied. Insufficient permissions.")
         
         # Validate inputs
-        username_norm = validate_username(username)
-        validated_password = validate_password(password)
+        validate_username(username)
+        validate_password(password)
+        
+        # Use validated username as-is
+        username_norm = username
         
         # Create domain model
         user = User.new_sys_admin(username_norm, first_name, last_name)
@@ -83,7 +86,9 @@ class App:
         license_no = validate_license(license_no)
         
         # Generate customer ID using domain service
-        customer_id = generate_customer_id("")  # Empty random part for now
+        import secrets
+        random_suffix = secrets.randbelow(10000)  # 4-digit random number
+        customer_id = generate_customer_id(f"_{random_suffix:04d}")
         
         # Create domain model
         traveller = Traveller.new_with_customer_id(
@@ -129,9 +134,11 @@ class App:
             last_name = self.crypto_box.decrypt(traveller['last_name_enc'])
             customer_id = traveller['customer_id']
             
-            if (search_term.lower() in first_name.lower() or 
-                search_term.lower() in last_name.lower() or 
-                search_term.lower() in customer_id.lower()):
+            # Use domain service for case-insensitive search
+            from src.domain.services import matches_partial
+            if (matches_partial(first_name, search_term) or 
+                matches_partial(last_name, search_term) or 
+                matches_partial(customer_id, search_term)):
                 matches.append(traveller)
         
         return matches
@@ -149,10 +156,13 @@ class App:
             raise ValidationError("Access denied. Insufficient permissions.")
         
         # Validate inputs
-        target_username = validate_username(target_username)
+        validate_username(target_username)
+        
+        # Use validated username as-is
+        username_norm = target_username
         
         # Get target user
-        target_user = self.user_repo.get_by_username_norm(target_username)
+        target_user = self.user_repo.get_by_username_norm(username_norm)
         if not target_user:
             raise ValidationError("Target user not found")
         
@@ -167,10 +177,25 @@ class App:
         self.restore_code_repo.insert(backup_name, target_user['id'], code_hash)
         return restore_code
     
-    def restore_with_code(self, current_user: CurrentUser, backup_name: str, restore_code: str):
+    def restore_any_backup(self, current_user: CurrentUser, backup_name: str):
+        """Restore any backup directly (SUPER_ADMIN only, no restore code needed)."""
         # Check policy for authorization
-        if not can_restore_backup(current_user.role):
-            raise ValidationError("Access denied. Insufficient permissions.")
+        if not can_restore_any_backup(current_user.role):
+            raise ValidationError("Access denied. Only Super Admin can restore backups directly.")
+        
+        # Direct restore without restore code
+        self.backup_store.restore_from_backup(backup_name)
+        return True
+    
+    def restore_with_code(self, current_user: CurrentUser, backup_name: str, restore_code: str):
+        """Restore backup using a restore code (SYS_ADMIN only)."""
+        # Check policy for authorization
+        if not can_restore_with_code(current_user.role):
+            raise ValidationError("Access denied. Only System Admin can restore with restore codes.")
+        
+        # Check if user can consume restore codes
+        if not can_consume_restore_code(current_user.role):
+            raise ValidationError("Access denied. Super Admin cannot consume restore codes.")
         
         success = self.restore_code_repo.consume(current_user.id, backup_name, restore_code)
         
@@ -196,7 +221,7 @@ def _clean_input(value: str, field: str) -> str:
     if value is None:
         raise ValidationError(f"{field} cannot be empty")
     
-    value = str(value).strip()
+    value = str(value)
     if not value:
         raise ValidationError(f"{field} cannot be empty")
     
