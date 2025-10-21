@@ -4,14 +4,15 @@ import secrets
 from datetime import datetime
 from src.application.use_cases.auth import login as auth_login, change_password as auth_change_password
 from src.application.security.acl import CurrentUser, require_super_admin, require_admin, require_engineer_or_admin
-from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday
+from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude
 from src.domain.errors import ValidationError
 from src.domain.constants import ROLES
-from src.domain.models import User, Traveller, RestoreCode
+from src.domain.models import User, Traveller, RestoreCode, Scooter
 from src.domain.policies import can_create_sys_admin, can_create_backup, can_generate_restore_code, can_restore_any_backup, can_restore_with_code, can_consume_restore_code
 from src.domain.services import generate_customer_id
 from src.application.ports.user_repo import UserRepo
 from src.application.ports.traveller_repo import TravellerRepo
+from src.application.ports.scooter_repo import ScooterRepo
 from src.application.ports.restore_code_repo import RestoreCodeRepo
 from src.application.ports.log_state_repo import LogStateRepo
 from src.application.ports.password_hasher import PasswordHasher
@@ -20,12 +21,13 @@ from src.application.ports.sec_logger import SecLogger
 from src.application.ports.backup_store import BackupStore
 
 class App:
-    def __init__(self, user_repo: UserRepo, traveller_repo: TravellerRepo, restore_code_repo: RestoreCodeRepo, 
-                 log_state_repo: LogStateRepo, password_hasher: PasswordHasher, crypto_box: CryptoBox, 
-                 logger: SecLogger, backup_store: BackupStore):
+    def __init__(self, user_repo: UserRepo, traveller_repo: TravellerRepo, scooter_repo: ScooterRepo, 
+                 restore_code_repo: RestoreCodeRepo, log_state_repo: LogStateRepo, password_hasher: PasswordHasher, 
+                 crypto_box: CryptoBox, logger: SecLogger, backup_store: BackupStore):
         # Inject dependencies via ports
         self.user_repo = user_repo
         self.traveller_repo = traveller_repo
+        self.scooter_repo = scooter_repo
         self.restore_code_repo = restore_code_repo
         self.log_state_repo = log_state_repo
         self.password_hasher = password_hasher
@@ -46,11 +48,11 @@ class App:
             raise ValidationError("Access denied. Insufficient permissions.")
         
         # Validate inputs
-        validate_username(username)
-        validate_password(password)
+        validated_username = validate_username(username)
+        validated_password = validate_password(password)
         
         # Use validated username as-is
-        username_norm = username
+        username_norm = validated_username
         
         # Create domain model
         user = User.new_sys_admin(username_norm, first_name, last_name)
@@ -156,10 +158,7 @@ class App:
             raise ValidationError("Access denied. Insufficient permissions.")
         
         # Validate inputs
-        validate_username(target_username)
-        
-        # Use validated username as-is
-        username_norm = target_username
+        username_norm = validate_username(target_username)
         
         # Get target user
         target_user = self.user_repo.get_by_username_norm(username_norm)
@@ -216,6 +215,105 @@ class App:
     def mark_all_seen(self, current_user: CurrentUser):
         require_admin(current_user)
         return self.log_state_repo.mark_all_seen(current_user.id)
+    
+    # Scooter management functions
+    def add_scooter(self, current_user: CurrentUser, brand: str, model: str, serial_number: str, 
+                    max_speed: int, battery_capacity: int, soc: int, latitude: float, longitude: float, 
+                    in_service_date: str, status: str = "active"):
+        require_admin(current_user)  # Only admins can add scooters
+        
+        # Validate inputs
+        brand = _clean_input(brand, "Brand")
+        model = _clean_input(model, "Model")
+        serial_number = _clean_input(serial_number, "Serial number")
+        max_speed = int(max_speed)
+        battery_capacity = int(battery_capacity)
+        soc = validate_soc(soc)
+        latitude = validate_latitude(latitude)
+        longitude = validate_longitude(longitude)
+        in_service_date = _clean_input(in_service_date, "In service date")
+        status = _clean_input(status, "Status")
+        
+        # Check if serial number already exists
+        existing = self.scooter_repo.get_by_serial(serial_number)
+        if existing:
+            raise ValidationError("Scooter with this serial number already exists")
+        
+        # Create scooter
+        scooter_id = self.scooter_repo.add(
+            brand=brand,
+            model=model,
+            serial_number=serial_number,
+            max_speed=max_speed,
+            battery_capacity=battery_capacity,
+            soc=soc,
+            latitude=latitude,
+            longitude=longitude,
+            in_service_date=in_service_date,
+            status=status
+        )
+        
+        # Log scooter creation
+        self.logger.log('scooter_created', current_user.username_norm, 
+                       {'scooter_id': scooter_id, 'serial_number': serial_number}, False)
+        
+        return scooter_id
+    
+    def search_scooters(self, current_user: CurrentUser, search_term: str):
+        require_engineer_or_admin(current_user)
+        return self.scooter_repo.search(search_term)
+    
+    def update_scooter(self, current_user: CurrentUser, scooter_id: int, **kwargs):
+        require_engineer_or_admin(current_user)
+        
+        # Get existing scooter
+        scooter = self.scooter_repo.get_by_id(scooter_id)
+        if not scooter:
+            raise ValidationError("Scooter not found")
+        
+        # Validate updates if provided
+        if 'soc' in kwargs:
+            kwargs['soc'] = validate_soc(kwargs['soc'])
+        if 'latitude' in kwargs:
+            kwargs['latitude'] = validate_latitude(kwargs['latitude'])
+        if 'longitude' in kwargs:
+            kwargs['longitude'] = validate_longitude(kwargs['longitude'])
+        if 'max_speed' in kwargs:
+            kwargs['max_speed'] = int(kwargs['max_speed'])
+        if 'battery_capacity' in kwargs:
+            kwargs['battery_capacity'] = int(kwargs['battery_capacity'])
+        
+        # Update scooter
+        success = self.scooter_repo.update(scooter_id, **kwargs)
+        
+        if success:
+            # Log scooter update
+            self.logger.log('scooter_updated', current_user.username_norm, 
+                           {'scooter_id': scooter_id, 'updates': list(kwargs.keys())}, False)
+        
+        return success
+    
+    def get_scooter(self, current_user: CurrentUser, scooter_id: int):
+        require_engineer_or_admin(current_user)
+        return self.scooter_repo.get_by_id(scooter_id)
+    
+    def delete_scooter(self, current_user: CurrentUser, scooter_id: int):
+        require_admin(current_user)  # Only admins can delete scooters
+        
+        # Get existing scooter
+        scooter = self.scooter_repo.get_by_id(scooter_id)
+        if not scooter:
+            raise ValidationError("Scooter not found")
+        
+        # Delete scooter
+        success = self.scooter_repo.delete(scooter_id)
+        
+        if success:
+            # Log scooter deletion
+            self.logger.log('scooter_deleted', current_user.username_norm, 
+                           {'scooter_id': scooter_id, 'serial_number': scooter['serial_number']}, False)
+        
+        return success
 
 def _clean_input(value: str, field: str) -> str:
     if value is None:

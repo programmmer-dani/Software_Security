@@ -141,12 +141,16 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("A) Change My Password")
         print("B) Add Traveller")
         print("C) Search Traveller")
-        print("D) Restore from Backup (with code)")
-        print("E) Create Backup")
-        print("F) View Logs")
-        print("G) Logout")
+        print("D) Add Scooter")
+        print("E) Search Scooter")
+        print("F) Update Scooter")
+        print("G) Delete Scooter")
+        print("H) Restore from Backup (with code)")
+        print("I) Create Backup")
+        print("J) View Logs")
+        print("K) Logout")
         
-        choice = input("\nChoose option (A-G): ")
+        choice = input("\nChoose option (A-K): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -155,15 +159,23 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "C":
             search_traveller_flow(app, current_user)
         elif choice == "D":
-            restore_from_backup_with_code_flow(app, current_user)
+            add_scooter_flow(app, current_user)
         elif choice == "E":
-            create_backup_flow(app, current_user)
+            search_scooter_flow(app, current_user)
         elif choice == "F":
-            view_logs(app, current_user)
+            update_scooter_flow(app, current_user)
         elif choice == "G":
+            delete_scooter_flow(app, current_user)
+        elif choice == "H":
+            restore_from_backup_with_code_flow(app, current_user)
+        elif choice == "I":
+            create_backup_flow(app, current_user)
+        elif choice == "J":
+            view_logs(app, current_user)
+        elif choice == "K":
             return None
         else:
-            print("Invalid option. Please choose A-G.")
+            print("Invalid option. Please choose A-K.")
 
 
 def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
@@ -175,9 +187,11 @@ def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("A) Change My Password")
         print("B) Add Traveller")
         print("C) Search Traveller")
-        print("D) Logout")
+        print("D) Search Scooter")
+        print("E) Update Scooter")
+        print("F) Logout")
         
-        choice = input("\nChoose option (A-D): ")
+        choice = input("\nChoose option (A-F): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -186,9 +200,13 @@ def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "C":
             search_traveller_flow(app, current_user)
         elif choice == "D":
+            search_scooter_flow(app, current_user)
+        elif choice == "E":
+            update_scooter_flow(app, current_user)
+        elif choice == "F":
             return None
         else:
-            print("Invalid option. Please choose A-D.")
+            print("Invalid option. Please choose A-F.")
 
 
 def create_system_admin(app, current_user: CurrentUser):
@@ -481,3 +499,178 @@ def view_logs(app, current_user: CurrentUser):
         
     except Exception as e:
         print("Failed to read logs. Please try again.")
+
+
+def add_scooter_flow(app, current_user: CurrentUser):
+    """Add a new scooter."""
+    print("\n" + "-"*30)
+    print("ADD SCOOTER")
+    print("-"*30)
+    
+    try:
+        brand = input("Brand: ")
+        model = input("Model: ")
+        serial_number = input("Serial number: ")
+        max_speed = int(input("Max speed (km/h): "))
+        battery_capacity = int(input("Battery capacity (Ah): "))
+        soc = int(input("State of charge (0-100): "))
+        latitude = float(input("Latitude: "))
+        longitude = float(input("Longitude: "))
+        in_service_date = input("In service date (YYYY-MM-DD): ")
+        status = input("Status (active/maintenance/retired): ")
+        
+        scooter_id = app.add_scooter(
+            current_user=current_user,
+            brand=brand,
+            model=model,
+            serial_number=serial_number,
+            max_speed=max_speed,
+            battery_capacity=battery_capacity,
+            soc=soc,
+            latitude=latitude,
+            longitude=longitude,
+            in_service_date=in_service_date,
+            status=status
+        )
+        print(f"Scooter added successfully! Scooter ID: {scooter_id}")
+        
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except ValueError as e:
+        print(f"Invalid input: {e}")
+    except Exception as e:
+        print("Failed to add scooter. Please try again.")
+
+
+def search_scooter_flow(app, current_user: CurrentUser):
+    """Search for scooters."""
+    print("\n" + "-"*30)
+    print("SEARCH SCOOTER")
+    print("-"*30)
+    print("Enter partial search term (brand, model, serial number, status)")
+    
+    search_term = input("Search: ")
+    if not search_term:
+        print("Search term cannot be empty.")
+        return
+    
+    try:
+        matches = app.search_scooters(current_user, search_term)
+        
+        if matches:
+            print(f"\nFound {len(matches)} scooter(s):")
+            print("-" * 80)
+            for scooter in matches:
+                print(f"ID: {scooter['id']} | Serial: {scooter['serial_number']} | "
+                      f"Brand: {scooter['brand']} | Model: {scooter['model']} | "
+                      f"Status: {scooter['status']} | SoC: {scooter['soc']}%")
+        else:
+            print("No scooters found matching your search.")
+            
+    except Exception as e:
+        print("Failed to search scooters. Please try again.")
+
+
+def update_scooter_flow(app, current_user: CurrentUser):
+    """Update scooter information."""
+    print("\n" + "-"*30)
+    print("UPDATE SCOOTER")
+    print("-"*30)
+    
+    try:
+        scooter_id = int(input("Scooter ID: "))
+        
+        # Get current scooter info
+        scooter = app.get_scooter(current_user, scooter_id)
+        if not scooter:
+            print("Scooter not found.")
+            return
+        
+        print(f"\nCurrent scooter info:")
+        print(f"Brand: {scooter['brand']}")
+        print(f"Model: {scooter['model']}")
+        print(f"Serial: {scooter['serial_number']}")
+        print(f"Max Speed: {scooter['max_speed']} km/h")
+        print(f"Battery: {scooter['battery_capacity']} Ah")
+        print(f"SoC: {scooter['soc']}%")
+        print(f"Location: {scooter['latitude']}, {scooter['longitude']}")
+        print(f"Status: {scooter['status']}")
+        
+        print("\nEnter new values (press Enter to keep current value):")
+        
+        updates = {}
+        
+        new_soc = input(f"New SoC (current: {scooter['soc']}): ")
+        if new_soc:
+            updates['soc'] = int(new_soc)
+        
+        new_latitude = input(f"New Latitude (current: {scooter['latitude']}): ")
+        if new_latitude:
+            updates['latitude'] = float(new_latitude)
+        
+        new_longitude = input(f"New Longitude (current: {scooter['longitude']}): ")
+        if new_longitude:
+            updates['longitude'] = float(new_longitude)
+        
+        new_status = input(f"New Status (current: {scooter['status']}): ")
+        if new_status:
+            updates['status'] = new_status
+        
+        if not updates:
+            print("No changes made.")
+            return
+        
+        success = app.update_scooter(current_user, scooter_id, **updates)
+        
+        if success:
+            print("Scooter updated successfully!")
+        else:
+            print("Failed to update scooter.")
+            
+    except ValueError as e:
+        print(f"Invalid input: {e}")
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print("Failed to update scooter. Please try again.")
+
+
+def delete_scooter_flow(app, current_user: CurrentUser):
+    """Delete a scooter."""
+    print("\n" + "-"*30)
+    print("DELETE SCOOTER")
+    print("-"*30)
+    
+    try:
+        scooter_id = int(input("Scooter ID: "))
+        
+        # Get scooter info for confirmation
+        scooter = app.get_scooter(current_user, scooter_id)
+        if not scooter:
+            print("Scooter not found.")
+            return
+        
+        print(f"\nScooter to delete:")
+        print(f"Brand: {scooter['brand']}")
+        print(f"Model: {scooter['model']}")
+        print(f"Serial: {scooter['serial_number']}")
+        print(f"Status: {scooter['status']}")
+        
+        confirm = input("\nAre you sure you want to delete this scooter? (yes/no): ")
+        if confirm.lower() != 'yes':
+            print("Deletion cancelled.")
+            return
+        
+        success = app.delete_scooter(current_user, scooter_id)
+        
+        if success:
+            print("Scooter deleted successfully!")
+        else:
+            print("Failed to delete scooter.")
+            
+    except ValueError as e:
+        print(f"Invalid input: {e}")
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print("Failed to delete scooter. Please try again.")

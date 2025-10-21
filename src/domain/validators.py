@@ -22,16 +22,17 @@ def _clean_input(value: str, field: str) -> str:
     return value
 
 def validate_username(username: str) -> str:
-    username = _clean_input(username, "Username")
-    
+    # Security: Validate raw input first
     if not re.match(r'^[A-Za-z_][A-Za-z0-9_\'.]{7,10}$', username):
         raise ValidationError("Username must be 8-11 chars, start with letter/_ and use [a-z0-9_'.]")
+    
+    # Optional: Clean after validation
+    username = _clean_input(username, "Username")
     
     return username
 
 def validate_password(password: str) -> str:
-    password = _clean_input(password, "Password")
-    
+    # Security: Validate raw input first
     if len(password) < 12 or len(password) > 30:
         raise ValidationError("Password must be 12-30 characters")
     
@@ -47,49 +48,62 @@ def validate_password(password: str) -> str:
     if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
         raise ValidationError("Password must contain special character")
     
+    # Optional: Clean after validation
+    password = _clean_input(password, "Password")
+    
     return password
 
 def validate_zip(zip_code: str) -> str:
-    zip_code = _clean_input(zip_code, "Zip code")
-    
+    # Security: Validate raw input first
     if not re.match(r'^\d{4}[A-Z]{2}$', zip_code):
         raise ValidationError("Zip code must be DDDDXX format (4 digits + 2 letters)")
+    
+    # Optional: Clean after validation
+    zip_code = _clean_input(zip_code, "Zip code")
     
     return zip_code
 
 def validate_phone(phone: str) -> str:
-    phone = _clean_input(phone, "Phone")
-    
+    # Security: Validate raw input first
     if not re.match(r'^\d{8}$', phone):
         raise ValidationError("Phone must be exactly 8 digits")
+    
+    # Optional: Clean after validation
+    phone = _clean_input(phone, "Phone")
     
     return phone
 
 def validate_license(license_num: str) -> str:
-    license_num = _clean_input(license_num, "License")
-    
+    # Security: Validate raw input first
     if not re.match(r'^[A-Z]{2}\d{7}$|^[A-Z]\d{8}$', license_num):
         raise ValidationError("License must be 2 letters + 7 digits or 1 letter + 8 digits")
+    
+    # Optional: Clean after validation
+    license_num = _clean_input(license_num, "License")
     
     return license_num
 
 def validate_gender(gender: str) -> str:
-    gender = _clean_input(gender, "Gender")
-    
+    # Security: Validate raw input first
     if gender not in ['male', 'female', 'Male', 'Female', 'MALE', 'FEMALE']:
         raise ValidationError("Gender must be 'male' or 'female'")
+    
+    # Optional: Clean after validation
+    gender = _clean_input(gender, "Gender")
     
     return gender
 
 def validate_city(city: str) -> str:
-    city = _clean_input(city, "City")
-    
+    # Security: Validate raw input first
     # Case-insensitive city validation
     city_lower = city.lower()
     valid_cities_lower = [c.lower() for c in CITIES]
     
     if city_lower not in valid_cities_lower:
         raise ValidationError(f"City must be one of: {', '.join(CITIES)}")
+    
+    # Optional: Clean after validation
+    city = _clean_input(city, "City")
     
     # Return the original case from CITIES list
     for valid_city in CITIES:
@@ -99,12 +113,14 @@ def validate_city(city: str) -> str:
     return city  # fallback
 
 def validate_birthday(birthday: str) -> str:
-    birthday = _clean_input(birthday, "Birthday")
-    
+    # Security: Validate raw input first
     try:
         datetime.strptime(birthday, '%Y-%m-%d')
     except ValueError:
         raise ValidationError("Birthday must be YYYY-MM-DD format")
+    
+    # Optional: Clean after validation
+    birthday = _clean_input(birthday, "Birthday")
     
     return birthday
 

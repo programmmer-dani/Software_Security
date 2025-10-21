@@ -70,6 +70,38 @@ class Traveller:
         )
 
 @dataclass
+class Scooter:
+    id: Optional[int]
+    brand: str
+    model: str
+    serial_number: str
+    max_speed: int
+    battery_capacity: int
+    soc: int
+    latitude: float
+    longitude: float
+    in_service_date: str
+    status: str
+    
+    @classmethod
+    def new(cls, brand: str, model: str, serial_number: str, max_speed: int, 
+            battery_capacity: int, soc: int, latitude: float, longitude: float, 
+            in_service_date: str, status: str = "active"):
+        return cls(
+            id=None,
+            brand=brand,
+            model=model,
+            serial_number=serial_number,
+            max_speed=max_speed,
+            battery_capacity=battery_capacity,
+            soc=soc,
+            latitude=latitude,
+            longitude=longitude,
+            in_service_date=in_service_date,
+            status=status
+        )
+
+@dataclass
 class RestoreCode:
     id: Optional[int]
     backup_name: str

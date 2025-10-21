@@ -75,6 +75,23 @@ def migrate():
             )
         """)
         
+        # Scooters table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS scooters (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                brand TEXT NOT NULL,
+                model TEXT NOT NULL,
+                serial_number TEXT UNIQUE NOT NULL,
+                max_speed INTEGER NOT NULL,
+                battery_capacity INTEGER NOT NULL,
+                soc INTEGER CHECK(soc >= 0 AND soc <= 100) NOT NULL,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                in_service_date TEXT NOT NULL,
+                status TEXT CHECK(status IN ('active','maintenance','retired')) NOT NULL
+            )
+        """)
+        
         # Restore codes table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS restore_codes (
@@ -98,6 +115,7 @@ def migrate():
         # Indexes
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_norm ON users(username_norm)")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_travellers_customer_id ON travellers(customer_id)")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_scooters_serial_number ON scooters(serial_number)")
         
         # Seed super_admin user if not exists
         _seed_super_admin(conn)
