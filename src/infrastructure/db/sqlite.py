@@ -82,11 +82,16 @@ def migrate():
                 brand TEXT NOT NULL,
                 model TEXT NOT NULL,
                 serial_number TEXT UNIQUE NOT NULL,
-                max_speed INTEGER NOT NULL,
+                top_speed INTEGER NOT NULL,
                 battery_capacity INTEGER NOT NULL,
                 soc INTEGER CHECK(soc >= 0 AND soc <= 100) NOT NULL,
+                target_soc_min INTEGER CHECK(target_soc_min >= 0 AND target_soc_min <= 100) NOT NULL,
+                target_soc_max INTEGER CHECK(target_soc_max >= 0 AND target_soc_max <= 100) NOT NULL,
                 latitude REAL NOT NULL,
                 longitude REAL NOT NULL,
+                out_of_service INTEGER CHECK(out_of_service IN (0,1)) NOT NULL,
+                mileage INTEGER CHECK(mileage >= 0) NOT NULL,
+                last_maintenance_date TEXT NOT NULL,
                 in_service_date TEXT NOT NULL,
                 status TEXT CHECK(status IN ('active','maintenance','retired')) NOT NULL
             )
@@ -140,7 +145,7 @@ def _seed_super_admin(conn):
     """, (
         "super_admin",  # Store as-is, no normalization
         encrypt("super_admin"),
-        hash("Admin_123?!1"),
+        hash("Admin_123?"),
         ROLES[0],  # SUPER_ADMIN
         encrypt(""),
         encrypt(""),

@@ -6,7 +6,10 @@ from src.application.security.acl import CurrentUser
 from src.domain.errors import ValidationError
 from src.domain.validators import (
     validate_username, validate_password, validate_zip, validate_phone,
-    validate_license, validate_gender, validate_city, validate_birthday
+    validate_license, validate_gender, validate_city, validate_birthday,
+    validate_email, validate_house_number, validate_serial_number,
+    validate_top_speed, validate_target_soc_min, validate_target_soc_max,
+    validate_mileage, validate_maintenance_date, validate_rotterdam_location
 )
 from src.domain.constants import ROLES
 
@@ -145,12 +148,16 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("E) Search Scooter")
         print("F) Update Scooter")
         print("G) Delete Scooter")
-        print("H) Restore from Backup (with code)")
-        print("I) Create Backup")
-        print("J) View Logs")
-        print("K) Logout")
+        print("H) Create Service Engineer")
+        print("I) Update Service Engineer")
+        print("J) Delete Service Engineer")
+        print("K) Reset Service Engineer Password")
+        print("L) Restore from Backup (with code)")
+        print("M) Create Backup")
+        print("N) View Logs")
+        print("O) Logout")
         
-        choice = input("\nChoose option (A-K): ")
+        choice = input("\nChoose option (A-O): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -167,15 +174,23 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "G":
             delete_scooter_flow(app, current_user)
         elif choice == "H":
-            restore_from_backup_with_code_flow(app, current_user)
+            create_service_engineer_flow(app, current_user)
         elif choice == "I":
-            create_backup_flow(app, current_user)
+            update_service_engineer_flow(app, current_user)
         elif choice == "J":
-            view_logs(app, current_user)
+            delete_service_engineer_flow(app, current_user)
         elif choice == "K":
+            reset_service_engineer_password_flow(app, current_user)
+        elif choice == "L":
+            restore_from_backup_with_code_flow(app, current_user)
+        elif choice == "M":
+            create_backup_flow(app, current_user)
+        elif choice == "N":
+            view_logs(app, current_user)
+        elif choice == "O":
             return None
         else:
-            print("Invalid option. Please choose A-K.")
+            print("Invalid option. Please choose A-O.")
 
 
 def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
@@ -282,6 +297,10 @@ def add_traveller_flow(app, current_user: CurrentUser):
         email = input("Email: ")
         phone = input("Phone (8 digits): ")
         license_no = input("Driving license: ")
+        
+        # Validate inputs
+        house_no = validate_house_number(house_no)
+        email = validate_email(email)
         
         customer_id = app.add_traveller(
             current_user=current_user,
@@ -674,3 +693,120 @@ def delete_scooter_flow(app, current_user: CurrentUser):
         print(f"Error: {e}")
     except Exception as e:
         print("Failed to delete scooter. Please try again.")
+
+
+def create_service_engineer_flow(app, current_user: CurrentUser):
+    """Create a new Service Engineer."""
+    print("\n" + "-"*30)
+    print("CREATE SERVICE ENGINEER")
+    print("-"*30)
+    
+    try:
+        username = input("Username: ")
+        if not username:
+            print("Username cannot be empty.")
+            return
+        
+        password = input("Password: ")
+        if not password:
+            print("Password cannot be empty.")
+            return
+        
+        first_name = input("First name: ")
+        last_name = input("Last name: ")
+        
+        app.create_service_engineer(current_user, username, password, first_name, last_name)
+        print("Service Engineer created successfully!")
+        
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print("Failed to create Service Engineer. Please try again.")
+
+
+def update_service_engineer_flow(app, current_user: CurrentUser):
+    """Update Service Engineer profile."""
+    print("\n" + "-"*30)
+    print("UPDATE SERVICE ENGINEER")
+    print("-"*30)
+    
+    try:
+        engineer_username = input("Service Engineer username: ")
+        if not engineer_username:
+            print("Username cannot be empty.")
+            return
+        
+        print("Enter new values (press Enter to keep current value):")
+        first_name = input("New first name: ")
+        last_name = input("New last name: ")
+        
+        # Only pass non-empty values
+        updates = {}
+        if first_name:
+            updates['first_name'] = first_name
+        if last_name:
+            updates['last_name'] = last_name
+        
+        if not updates:
+            print("No changes made.")
+            return
+        
+        app.update_service_engineer(current_user, engineer_username, **updates)
+        print("Service Engineer updated successfully!")
+        
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print("Failed to update Service Engineer. Please try again.")
+
+
+def delete_service_engineer_flow(app, current_user: CurrentUser):
+    """Delete a Service Engineer."""
+    print("\n" + "-"*30)
+    print("DELETE SERVICE ENGINEER")
+    print("-"*30)
+    
+    try:
+        engineer_username = input("Service Engineer username: ")
+        if not engineer_username:
+            print("Username cannot be empty.")
+            return
+        
+        confirm = input(f"Are you sure you want to delete Service Engineer '{engineer_username}'? (yes/no): ")
+        if confirm.lower() != 'yes':
+            print("Deletion cancelled.")
+            return
+        
+        app.delete_service_engineer(current_user, engineer_username)
+        print("Service Engineer deleted successfully!")
+        
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print("Failed to delete Service Engineer. Please try again.")
+
+
+def reset_service_engineer_password_flow(app, current_user: CurrentUser):
+    """Reset Service Engineer password."""
+    print("\n" + "-"*30)
+    print("RESET SERVICE ENGINEER PASSWORD")
+    print("-"*30)
+    
+    try:
+        engineer_username = input("Service Engineer username: ")
+        if not engineer_username:
+            print("Username cannot be empty.")
+            return
+        
+        new_password = input("New password: ")
+        if not new_password:
+            print("Password cannot be empty.")
+            return
+        
+        app.reset_service_engineer_password(current_user, engineer_username, new_password)
+        print("Service Engineer password reset successfully!")
+        
+    except ValidationError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print("Failed to reset Service Engineer password. Please try again.")

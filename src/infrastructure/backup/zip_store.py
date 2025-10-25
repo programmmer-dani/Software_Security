@@ -15,8 +15,12 @@ def _create_selective_backup_db():
     import sqlite3
     import tempfile
     
-    # Tables to include in backup (core business data)
+    # Tables to include in backup (core business data) - whitelist for security
     CORE_TABLES = ['users', 'travellers']
+    
+    def _validate_table_name(table_name: str) -> bool:
+        """Validate that table name is in the whitelist to prevent SQL injection."""
+        return table_name in CORE_TABLES
     
     # Create temporary database
     temp_fd, temp_path = tempfile.mkstemp(suffix='.db')
@@ -28,6 +32,10 @@ def _create_selective_backup_db():
             with sqlite3.connect(temp_db) as target_conn:
                 # Copy schema for core tables
                 for table in CORE_TABLES:
+                    # Security: Validate table name is in whitelist
+                    if not _validate_table_name(table):
+                        raise ValueError(f"Invalid table name: {table}")
+                    
                     # Get table schema
                     cursor = source_conn.cursor()
                     cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table}'")
@@ -37,17 +45,18 @@ def _create_selective_backup_db():
                         # Create table in target database
                         target_conn.execute(schema[0])
                         
-                        # Copy data
+                        # Copy data - table name is from whitelist, safe to use
+                        # SQLite doesn't support parameterized table names, but table is from CORE_TABLES whitelist
                         cursor.execute(f"SELECT * FROM {table}")
                         rows = cursor.fetchall()
                         
                         if rows:
-                            # Get column names
+                            # Get column names - table name is from whitelist
                             cursor.execute(f"PRAGMA table_info({table})")
                             columns = [col[1] for col in cursor.fetchall()]
                             placeholders = ','.join(['?' for _ in columns])
                             
-                            # Insert data
+                            # Insert data - table name is from whitelist
                             target_conn.executemany(f"INSERT INTO {table} ({','.join(columns)}) VALUES ({placeholders})", rows)
                 
                 # Copy indexes for core tables
@@ -123,9 +132,18 @@ def _backup_session_tables():
                 
                 # Copy session data
                 SESSION_TABLES = ['restore_codes', 'log_state']
+                
+                def _validate_session_table_name(table_name: str) -> bool:
+                    """Validate that session table name is in the whitelist to prevent SQL injection."""
+                    return table_name in SESSION_TABLES
+                
                 for table in SESSION_TABLES:
+                    # Security: Validate table name is in whitelist
+                    if not _validate_session_table_name(table):
+                        raise ValueError(f"Invalid session table name: {table}")
+                    
                     cursor = source_conn.cursor()
-                    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
                     if cursor.fetchone():
                         cursor.execute(f"SELECT * FROM {table}")
                         rows = cursor.fetchall()
@@ -180,14 +198,22 @@ def _restore_session_tables(target_conn, session_backup_path):
     
     SESSION_TABLES = ['restore_codes', 'log_state']
     
+    def _validate_session_table_name(table_name: str) -> bool:
+        """Validate that session table name is in the whitelist to prevent SQL injection."""
+        return table_name in SESSION_TABLES
+    
     with sqlite3.connect(session_backup_path) as source_conn:
         for table in SESSION_TABLES:
+            # Security: Validate table name is in whitelist
+            if not _validate_session_table_name(table):
+                raise ValueError(f"Invalid session table name: {table}")
+            
             cursor = source_conn.cursor()
-            cursor.execute(f"SELECT * FROM {table}")
+            cursor.execute(f"SELECT * FROM {table}")  # Table name is from whitelist
             rows = cursor.fetchall()
             
             if rows:
-                cursor.execute(f"PRAGMA table_info({table})")
+                cursor.execute(f"PRAGMA table_info({table})")  # Table name is from whitelist
                 columns = [col[1] for col in cursor.fetchall()]
                 placeholders = ','.join(['?' for _ in columns])
                 target_conn.executemany(f"INSERT INTO {table} ({','.join(columns)}) VALUES ({placeholders})", rows)

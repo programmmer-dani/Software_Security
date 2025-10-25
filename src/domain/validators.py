@@ -124,6 +124,27 @@ def validate_birthday(birthday: str) -> str:
     
     return birthday
 
+def validate_email(email: str) -> str:
+    # Security: Validate raw input first
+    if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
+        raise ValidationError("Email must be in valid format (user@domain.com)")
+    
+    # Optional: Clean after validation
+    email = _clean_input(email, "Email")
+    
+    return email
+
+def validate_house_number(house_no: str) -> int:
+    # Security: Validate raw input first
+    if not house_no.isdigit():
+        raise ValidationError("House number must be a positive integer")
+    
+    house_num = int(house_no)
+    if house_num < 1 or house_num > 9999:
+        raise ValidationError("House number must be between 1 and 9999")
+    
+    return house_num
+
 def validate_soc(soc: int) -> int:
     if not isinstance(soc, int):
         raise ValidationError("SOC must be a number")
@@ -132,6 +153,74 @@ def validate_soc(soc: int) -> int:
         raise ValidationError("SOC must be 0-100")
     
     return soc
+
+def validate_serial_number(serial: str) -> str:
+    # Security: Validate raw input first
+    if not re.match(r'^[A-Za-z0-9]{10,17}$', serial):
+        raise ValidationError("Serial number must be 10-17 alphanumeric characters")
+    
+    # Optional: Clean after validation
+    serial = _clean_input(serial, "Serial number")
+    
+    return serial
+
+def validate_top_speed(speed: int) -> int:
+    if not isinstance(speed, int):
+        raise ValidationError("Top speed must be a number")
+    
+    if speed < 0:
+        raise ValidationError("Top speed must be non-negative")
+    
+    return speed
+
+def validate_target_soc_min(min_soc: int) -> int:
+    if not isinstance(min_soc, int):
+        raise ValidationError("Target SoC min must be a number")
+    
+    if min_soc < 0 or min_soc > 100:
+        raise ValidationError("Target SoC min must be 0-100")
+    
+    return min_soc
+
+def validate_target_soc_max(max_soc: int) -> int:
+    if not isinstance(max_soc, int):
+        raise ValidationError("Target SoC max must be a number")
+    
+    if max_soc < 0 or max_soc > 100:
+        raise ValidationError("Target SoC max must be 0-100")
+    
+    return max_soc
+
+def validate_mileage(mileage: int) -> int:
+    if not isinstance(mileage, int):
+        raise ValidationError("Mileage must be a number")
+    
+    if mileage < 0:
+        raise ValidationError("Mileage must be non-negative")
+    
+    return mileage
+
+def validate_maintenance_date(date: str) -> str:
+    # Security: Validate raw input first
+    try:
+        datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        raise ValidationError("Maintenance date must be YYYY-MM-DD format")
+    
+    # Optional: Clean after validation
+    date = _clean_input(date, "Maintenance date")
+    
+    return date
+
+def validate_rotterdam_location(lat: float, lon: float) -> tuple[float, float]:
+    """Validate that coordinates are within Rotterdam bounds."""
+    if not (ROTTERDAM_BOUNDS["lat_min"] <= lat <= ROTTERDAM_BOUNDS["lat_max"]):
+        raise ValidationError(f"Latitude must be between {ROTTERDAM_BOUNDS['lat_min']} and {ROTTERDAM_BOUNDS['lat_max']}")
+    
+    if not (ROTTERDAM_BOUNDS["lon_min"] <= lon <= ROTTERDAM_BOUNDS["lon_max"]):
+        raise ValidationError(f"Longitude must be between {ROTTERDAM_BOUNDS['lon_min']} and {ROTTERDAM_BOUNDS['lon_max']}")
+    
+    return lat, lon
 
 def validate_latitude(lat: float) -> float:
     if not isinstance(lat, (int, float)):

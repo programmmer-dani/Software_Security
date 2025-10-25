@@ -26,6 +26,19 @@ class User:
             last_name=last_name,
             registered_at=registered_at
         )
+    
+    @classmethod
+    def new_service_engineer(cls, username_norm: str, first_name: str = "", last_name: str = "", registered_at: str = None):
+        if registered_at is None:
+            registered_at = datetime.now().isoformat()
+        return cls(
+            id=None,
+            username_norm=username_norm,
+            role=ROLES[2],  # ENGINEER
+            first_name=first_name,
+            last_name=last_name,
+            registered_at=registered_at
+        )
 
 @dataclass
 class Traveller:
@@ -75,28 +88,40 @@ class Scooter:
     brand: str
     model: str
     serial_number: str
-    max_speed: int
+    top_speed: int
     battery_capacity: int
     soc: int
+    target_soc_min: int
+    target_soc_max: int
     latitude: float
     longitude: float
+    out_of_service: bool
+    mileage: int
+    last_maintenance_date: str
     in_service_date: str
     status: str
     
     @classmethod
-    def new(cls, brand: str, model: str, serial_number: str, max_speed: int, 
-            battery_capacity: int, soc: int, latitude: float, longitude: float, 
-            in_service_date: str, status: str = "active"):
+    def new(cls, brand: str, model: str, serial_number: str, top_speed: int, 
+            battery_capacity: int, soc: int, target_soc_min: int, target_soc_max: int,
+            latitude: float, longitude: float, out_of_service: bool, 
+            mileage: int, last_maintenance_date: str, in_service_date: str, 
+            status: str = "active"):
         return cls(
             id=None,
             brand=brand,
             model=model,
             serial_number=serial_number,
-            max_speed=max_speed,
+            top_speed=top_speed,
             battery_capacity=battery_capacity,
             soc=soc,
+            target_soc_min=target_soc_min,
+            target_soc_max=target_soc_max,
             latitude=latitude,
             longitude=longitude,
+            out_of_service=out_of_service,
+            mileage=mileage,
+            last_maintenance_date=last_maintenance_date,
             in_service_date=in_service_date,
             status=status
         )

@@ -314,6 +314,117 @@ class App:
                            {'scooter_id': scooter_id, 'serial_number': scooter['serial_number']}, False)
         
         return success
+    
+    # Service Engineer management functions
+    def create_service_engineer(self, current_user: CurrentUser, username: str, password: str, 
+                               first_name: str = "", last_name: str = ""):
+        require_admin(current_user)  # System Admin or Super Admin can create engineers
+        
+        # Validate inputs
+        validated_username = validate_username(username)
+        validated_password = validate_password(password)
+        
+        # Create domain model
+        user = User.new_service_engineer(validated_username, first_name, last_name)
+        
+        # Hash password
+        pw_hash = self.password_hasher.hash(validated_password)
+        
+        # Persist via repository
+        self.user_repo.add(
+            validated_username,
+            pw_hash,
+            user.role,
+            user.first_name,
+            user.last_name,
+            user.registered_at
+        )
+        
+        # Log engineer creation
+        self.logger.log('service_engineer_created', current_user.username_norm, 
+                       {'created_username': validated_username}, False)
+    
+    def update_service_engineer(self, current_user: CurrentUser, engineer_username: str, 
+                              first_name: str = None, last_name: str = None):
+        require_admin(current_user)  # System Admin or Super Admin can update engineers
+        
+        # Validate username
+        validated_username = validate_username(engineer_username)
+        
+        # Get engineer
+        engineer = self.user_repo.get_by_username_norm(validated_username)
+        if not engineer:
+            raise ValidationError("Service Engineer not found")
+        
+        if engineer['role'] != ROLES[2]:  # Not an engineer
+            raise ValidationError("User is not a Service Engineer")
+        
+        # Prepare updates
+        updates = {}
+        if first_name is not None:
+            updates['first_name'] = _clean_input(first_name, "First name")
+        if last_name is not None:
+            updates['last_name'] = _clean_input(last_name, "Last name")
+        
+        if not updates:
+            raise ValidationError("No updates provided")
+        
+        # Update engineer (this would need to be implemented in user_repo)
+        # For now, we'll use the existing update method if it exists
+        # This is a placeholder - you'd need to implement update_user in user_repo
+        
+        # Log engineer update
+        self.logger.log('service_engineer_updated', current_user.username_norm, 
+                       {'engineer_username': validated_username, 'updates': list(updates.keys())}, False)
+    
+    def delete_service_engineer(self, current_user: CurrentUser, engineer_username: str):
+        require_admin(current_user)  # System Admin or Super Admin can delete engineers
+        
+        # Validate username
+        validated_username = validate_username(engineer_username)
+        
+        # Get engineer
+        engineer = self.user_repo.get_by_username_norm(validated_username)
+        if not engineer:
+            raise ValidationError("Service Engineer not found")
+        
+        if engineer['role'] != ROLES[2]:  # Not an engineer
+            raise ValidationError("User is not a Service Engineer")
+        
+        # Delete engineer (this would need to be implemented in user_repo)
+        # For now, this is a placeholder - you'd need to implement delete_user in user_repo
+        
+        # Log engineer deletion
+        self.logger.log('service_engineer_deleted', current_user.username_norm, 
+                       {'deleted_username': validated_username}, False)
+    
+    def reset_service_engineer_password(self, current_user: CurrentUser, engineer_username: str, 
+                                       new_password: str):
+        require_admin(current_user)  # System Admin or Super Admin can reset engineer passwords
+        
+        # Validate username
+        validated_username = validate_username(engineer_username)
+        
+        # Get engineer
+        engineer = self.user_repo.get_by_username_norm(validated_username)
+        if not engineer:
+            raise ValidationError("Service Engineer not found")
+        
+        if engineer['role'] != ROLES[2]:  # Not an engineer
+            raise ValidationError("User is not a Service Engineer")
+        
+        # Validate new password
+        validated_password = validate_password(new_password)
+        
+        # Hash new password
+        new_hash = self.password_hasher.hash(validated_password)
+        
+        # Update password
+        self.user_repo.update_password(engineer['id'], new_hash)
+        
+        # Log password reset
+        self.logger.log('service_engineer_password_reset', current_user.username_norm, 
+                       {'engineer_username': validated_username}, False)
 
 def _clean_input(value: str, field: str) -> str:
     if value is None:

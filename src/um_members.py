@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
 from src.infrastructure.db.sqlite import migrate, get_conn
 from src.application.facade import App
-from presentation import cli
+from src.presentation import cli
 from src.infrastructure.adapters.user_repo_sqlite import UserRepoSqlite
 from src.infrastructure.adapters.traveller_repo_sqlite import TravellerRepoSqlite
 from src.infrastructure.adapters.scooter_repo_sqlite import ScooterRepoSqlite
