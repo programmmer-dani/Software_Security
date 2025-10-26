@@ -19,7 +19,7 @@ def can_generate_restore_code(role: str) -> bool:
 
 def can_restore_any_backup(role: str) -> bool:
 
-    return role == ROLES[0]
+    return False
 
 def can_restore_with_code(role: str) -> bool:
 

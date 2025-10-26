@@ -16,8 +16,8 @@ _hasher = PasswordHasher(
 )
 
 def hash(pw: str) -> str:
-    if not pw or len(pw) < 12 or len(pw) > 30:
-        raise ValueError("Password must be 12-30 characters")
+    if not pw or len(pw) < 10 or len(pw) > 30:
+        raise ValueError("Password must be 10-30 characters")
     return _hasher.hash(pw)
 
 def hash_token(token: str) -> str:

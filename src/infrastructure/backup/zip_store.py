@@ -5,6 +5,7 @@ import shutil
 import os
 import sqlite3
 from datetime import datetime
+from pathlib import Path
 from src.infrastructure.config import DATABASE_FILE, BACKUP_FOLDER
 from src.infrastructure.logging.sec_logger import log
 
@@ -236,9 +237,6 @@ def restore_from_backup(backup_name: str):
         raise ValueError(f"Backup {backup_name} is corrupted or not a valid zip file")
 
     log('restore_started', 'system', {'backup_name': backup_name}, False)
-
-    from src.infrastructure.db.sqlite import close_all_connections
-    close_all_connections()
 
     temp_db = DATABASE_FILE.with_suffix('.tmp')
     

@@ -6,6 +6,7 @@ from datetime import datetime
 from src.infrastructure.config import DATABASE_FILE
 from src.domain.constants import ROLES
 from src.infrastructure.crypto.fernet_box import encrypt
+from src.infrastructure.crypto.argon2_hasher import hash
 
 def get_conn():
 
@@ -34,25 +35,23 @@ def db_transaction():
     finally:
         conn.close()
 
-def close_all_connections():
-
-    pass
-
 def migrate():
     with db_transaction() as conn:
 
-        conn.execute(f"""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username_norm TEXT UNIQUE NOT NULL,
                 username_enc TEXT NOT NULL,
                 pw_hash TEXT NOT NULL,
-                role TEXT CHECK(role IN ('{ROLES[0]}','{ROLES[1]}','{ROLES[2]}')) NOT NULL,
+                role TEXT CHECK(role IN ('SUPER_ADMIN','SYS_ADMIN','ENGINEER')) NOT NULL,
                 first_name_enc TEXT NOT NULL,
                 last_name_enc TEXT NOT NULL,
                 registered_at TEXT NOT NULL
             )
+        """)
 
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS travellers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customer_id TEXT UNIQUE NOT NULL,
@@ -69,7 +68,9 @@ def migrate():
                 license_enc TEXT NOT NULL,
                 registered_at TEXT NOT NULL
             )
+        """)
 
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS scooters (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 brand TEXT NOT NULL,
@@ -88,7 +89,9 @@ def migrate():
                 in_service_date TEXT NOT NULL,
                 status TEXT CHECK(status IN ('active','maintenance','retired')) NOT NULL
             )
+        """)
 
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS restore_codes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 backup_name TEXT NOT NULL,
@@ -97,20 +100,24 @@ def migrate():
                 used INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL
             )
+        """)
 
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS log_state (
                 user_id INTEGER PRIMARY KEY,
                 last_seen_rowid INTEGER DEFAULT 0
             )
+        """)
 
-        INSERT INTO users (username_norm, username_enc, pw_hash, role, first_name_enc, last_name_enc, registered_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        "super_admin",
-        encrypt("super_admin"),
-        hash("Admin_123?"),
-        ROLES[0],
-        encrypt(""),
-        encrypt(""),
-        datetime.now().isoformat()
-    ))
+        conn.execute("""
+            INSERT OR IGNORE INTO users (username_norm, username_enc, pw_hash, role, first_name_enc, last_name_enc, registered_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            "super_admin",
+            encrypt("super_admin"),
+            hash("Admin_123?"),
+            ROLES[0],
+            encrypt(""),
+            encrypt(""),
+            datetime.now().isoformat()
+        ))

@@ -23,7 +23,7 @@ def _validate_input(value: str, field: str) -> str:
 def validate_username(username: str) -> str:
 
     if not re.match(r'^[A-Za-z_][A-Za-z0-9_\'.]{7,10}$', username):
-        raise ValidationError("Username must be 8-11 chars, start with letter/_ and use [a-z0-9_'.]")
+        raise ValidationError("Username must be 8-11 characters, start with letter or underscore, and contain only letters, numbers, underscores, periods, and apostrophes")
 
     username = _validate_input(username, "Username")
     
@@ -31,8 +31,8 @@ def validate_username(username: str) -> str:
 
 def validate_password(password: str) -> str:
 
-    if len(password) < 12 or len(password) > 30:
-        raise ValidationError("Password must be 12-30 characters")
+    if len(password) < 10 or len(password) > 30:
+        raise ValidationError("Password must be 10-30 characters")
     
     if not re.search(r'[a-z]', password):
         raise ValidationError("Password must contain lowercase letter")

@@ -161,7 +161,7 @@ class App:
     def restore_any_backup(self, current_user: CurrentUser, backup_name: str):
 
         if not can_restore_any_backup(current_user.role):
-            raise ValidationError("Access denied. Only Super Admin can restore backups directly.")
+            raise ValidationError("Access denied. Super Admin cannot restore backups directly.")
 
         self.backup_store.restore_from_backup(backup_name)
         return True
