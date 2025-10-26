@@ -1,4 +1,4 @@
-# src/infrastructure/db/user_repo_sqlite.py
+
 
 from datetime import datetime
 from .sqlite import db_connection
@@ -12,8 +12,7 @@ def get_by_username_norm(username_norm: str):
         
         if not row:
             return None
-        
-        # Decrypt sensitive fields
+
         return {
             'id': row[0],
             'username_norm': row[1],
@@ -35,7 +34,7 @@ def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name:
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             username_norm,
-            encrypt(username_norm),  # Use normalized username for encryption
+            encrypt(username_norm),
             pw_hash,
             role,
             encrypt(first_name),

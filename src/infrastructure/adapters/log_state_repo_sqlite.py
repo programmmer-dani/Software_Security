@@ -1,4 +1,4 @@
-# src/infrastructure/adapters/log_state_repo_sqlite.py
+
 
 from src.application.ports.log_state_repo import LogStateRepo
 from src.infrastructure.db.log_state_repo_sqlite import get_unread_suspicious_count, mark_all_seen

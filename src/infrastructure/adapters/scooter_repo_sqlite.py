@@ -1,4 +1,4 @@
-# src/infrastructure/adapters/scooter_repo_sqlite.py
+
 
 from src.application.ports.scooter_repo import ScooterRepo
 from src.infrastructure.db.scooter_repo_sqlite import (

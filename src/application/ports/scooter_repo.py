@@ -1,4 +1,4 @@
-# src/application/ports/scooter_repo.py
+
 
 from abc import ABC, abstractmethod
 

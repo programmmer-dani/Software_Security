@@ -1,4 +1,4 @@
-# src/application/ports/password_hasher.py
+
 
 from abc import ABC, abstractmethod
 

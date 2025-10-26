@@ -1,4 +1,4 @@
-# src/domain/models.py
+
 
 from dataclasses import dataclass
 from typing import Optional
@@ -21,7 +21,7 @@ class User:
         return cls(
             id=None,
             username_norm=username_norm,
-            role=ROLES[1],  # SYS_ADMIN
+            role=ROLES[1],
             first_name=first_name,
             last_name=last_name,
             registered_at=registered_at
@@ -34,7 +34,7 @@ class User:
         return cls(
             id=None,
             username_norm=username_norm,
-            role=ROLES[2],  # ENGINEER
+            role=ROLES[2],
             first_name=first_name,
             last_name=last_name,
             registered_at=registered_at
@@ -100,31 +100,6 @@ class Scooter:
     last_maintenance_date: str
     in_service_date: str
     status: str
-    
-    @classmethod
-    def new(cls, brand: str, model: str, serial_number: str, top_speed: int, 
-            battery_capacity: int, soc: int, target_soc_min: int, target_soc_max: int,
-            latitude: float, longitude: float, out_of_service: bool, 
-            mileage: int, last_maintenance_date: str, in_service_date: str, 
-            status: str = "active"):
-        return cls(
-            id=None,
-            brand=brand,
-            model=model,
-            serial_number=serial_number,
-            top_speed=top_speed,
-            battery_capacity=battery_capacity,
-            soc=soc,
-            target_soc_min=target_soc_min,
-            target_soc_max=target_soc_max,
-            latitude=latitude,
-            longitude=longitude,
-            out_of_service=out_of_service,
-            mileage=mileage,
-            last_maintenance_date=last_maintenance_date,
-            in_service_date=in_service_date,
-            status=status
-        )
 
 @dataclass
 class RestoreCode:

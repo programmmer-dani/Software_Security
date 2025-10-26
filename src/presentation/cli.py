@@ -1,21 +1,14 @@
 import sys
-from datetime import datetime
 from typing import Optional
 
 from src.application.security.acl import CurrentUser
 from src.domain.errors import ValidationError
 from src.domain.validators import (
-    validate_username, validate_password, validate_zip, validate_phone,
-    validate_license, validate_gender, validate_city, validate_birthday,
-    validate_email, validate_house_number, validate_serial_number,
-    validate_top_speed, validate_target_soc_min, validate_target_soc_max,
-    validate_mileage, validate_maintenance_date, validate_rotterdam_location
+    validate_username, validate_email, validate_house_number
 )
 from src.domain.constants import ROLES
 
-
 def run(app):
-    """Main application entry point."""
     current_user: Optional[CurrentUser] = None
     
     while True:
@@ -24,9 +17,8 @@ def run(app):
         else:
             current_user = role_menu(app, current_user)
 
-
 def main_menu(app) -> Optional[CurrentUser]:
-    """Main menu for unauthenticated users."""
+
     while True:
         print("\n" + "="*50)
         print("UM Members Management System")
@@ -44,9 +36,8 @@ def main_menu(app) -> Optional[CurrentUser]:
         else:
             print("Invalid option. Please choose 1 or 2.")
 
-
 def login_flow(app) -> Optional[CurrentUser]:
-    """Handle user login."""
+
     print("\n" + "-"*30)
     print("LOGIN")
     print("-"*30)
@@ -73,7 +64,7 @@ def login_flow(app) -> Optional[CurrentUser]:
         if user:
             print(f"\nWelcome, {user.role}!")
             
-            if user.role in [ROLES[0], ROLES[1]]:  # SUPER_ADMIN, SYS_ADMIN
+            if user.role in [ROLES[0], ROLES[1]]:
                 unread_count = app.get_unread_suspicious_count(user)
                 if unread_count > 0:
                     print(f"⚠ You have {unread_count} unread suspicious events.")
@@ -90,22 +81,20 @@ def login_flow(app) -> Optional[CurrentUser]:
         print("An error occurred. Please try again.")
         return None
 
-
 def role_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
-    """Role-based menu system."""
-    if current_user.role == ROLES[0]:  # SUPER_ADMIN
+
+    if current_user.role == ROLES[0]:
         return super_admin_menu(app, current_user)
-    elif current_user.role == ROLES[1]:  # SYS_ADMIN
+    elif current_user.role == ROLES[1]:
         return sys_admin_menu(app, current_user)
-    elif current_user.role == ROLES[2]:  # ENGINEER
+    elif current_user.role == ROLES[2]:
         return engineer_menu(app, current_user)
     else:
         print("Access denied. Unknown role.")
         return None
 
-
 def super_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
-    """Super Admin menu."""
+
     while True:
         print("\n" + "="*50)
         print("SUPER ADMIN MENU")
@@ -134,9 +123,8 @@ def super_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         else:
             print("Invalid option. Please choose A-F.")
 
-
 def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
-    """System Admin menu."""
+
     while True:
         print("\n" + "="*50)
         print("SYSTEM ADMIN MENU")
@@ -192,9 +180,8 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         else:
             print("Invalid option. Please choose A-O.")
 
-
 def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
-    """Engineer menu."""
+
     while True:
         print("\n" + "="*50)
         print("ENGINEER MENU")
@@ -223,9 +210,8 @@ def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         else:
             print("Invalid option. Please choose A-F.")
 
-
 def create_system_admin(app, current_user: CurrentUser):
-    """Create a new System Admin user."""
+
     print("\n" + "-"*30)
     print("CREATE SYSTEM ADMIN")
     print("-"*30)
@@ -252,9 +238,8 @@ def create_system_admin(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to create System Admin. Please try again.")
 
-
 def change_password_flow(app, current_user: CurrentUser):
-    """Handle password change."""
+
     print("\n" + "-"*30)
     print("CHANGE PASSWORD")
     print("-"*30)
@@ -278,9 +263,8 @@ def change_password_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to change password. Please try again.")
 
-
 def add_traveller_flow(app, current_user: CurrentUser):
-    """Add a new traveller."""
+
     print("\n" + "-"*30)
     print("ADD TRAVELLER")
     print("-"*30)
@@ -297,8 +281,7 @@ def add_traveller_flow(app, current_user: CurrentUser):
         email = input("Email: ")
         phone = input("Phone (8 digits): ")
         license_no = input("Driving license: ")
-        
-        # Validate inputs
+
         house_no = validate_house_number(house_no)
         email = validate_email(email)
         
@@ -323,9 +306,8 @@ def add_traveller_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to add traveller. Please try again.")
 
-
 def search_traveller_flow(app, current_user: CurrentUser):
-    """Search for travellers."""
+
     print("\n" + "-"*30)
     print("SEARCH TRAVELLER")
     print("-"*30)
@@ -352,9 +334,8 @@ def search_traveller_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to search travellers. Please try again.")
 
-
 def create_backup_flow(app, current_user: CurrentUser):
-    """Create a backup."""
+
     print("\n" + "-"*30)
     print("CREATE BACKUP")
     print("-"*30)
@@ -367,9 +348,8 @@ def create_backup_flow(app, current_user: CurrentUser):
         print(f"Failed to create backup: {e}")
         print("Please try again.")
 
-
 def generate_restore_code(app, current_user: CurrentUser):
-    """Generate a restore code for Super Admin."""
+
     print("\n" + "-"*30)
     print("GENERATE RESTORE CODE")
     print("-"*30)
@@ -398,9 +378,8 @@ def generate_restore_code(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to generate restore code. Please try again.")
 
-
 def restore_from_backup_flow(app, current_user: CurrentUser):
-    """Restore from backup using a code."""
+
     print("\n" + "-"*30)
     print("RESTORE FROM BACKUP")
     print("-"*30)
@@ -431,9 +410,8 @@ def restore_from_backup_flow(app, current_user: CurrentUser):
         print(f"Failed to restore from backup: {e}")
         print("Please try again.")
 
-
 def restore_backup_direct(app, current_user: CurrentUser):
-    """Restore backup directly (SUPER_ADMIN only)."""
+
     print("\n" + "-"*30)
     print("RESTORE BACKUP (DIRECT)")
     print("-"*30)
@@ -456,9 +434,8 @@ def restore_backup_direct(app, current_user: CurrentUser):
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-
 def restore_from_backup_with_code_flow(app, current_user: CurrentUser):
-    """Restore from backup using a code (SYS_ADMIN only)."""
+
     print("\n" + "-"*30)
     print("RESTORE FROM BACKUP (WITH CODE)")
     print("-"*30)
@@ -486,9 +463,8 @@ def restore_from_backup_with_code_flow(app, current_user: CurrentUser):
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-
 def view_logs(app, current_user: CurrentUser):
-    """View audit logs."""
+
     print("\n" + "-"*30)
     print("AUDIT LOGS")
     print("-"*30)
@@ -519,9 +495,8 @@ def view_logs(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to read logs. Please try again.")
 
-
 def add_scooter_flow(app, current_user: CurrentUser):
-    """Add a new scooter."""
+
     print("\n" + "-"*30)
     print("ADD SCOOTER")
     print("-"*30)
@@ -530,11 +505,16 @@ def add_scooter_flow(app, current_user: CurrentUser):
         brand = input("Brand: ")
         model = input("Model: ")
         serial_number = input("Serial number: ")
-        max_speed = int(input("Max speed (km/h): "))
+        top_speed = int(input("Top speed (km/h): "))
         battery_capacity = int(input("Battery capacity (Ah): "))
         soc = int(input("State of charge (0-100): "))
+        target_soc_min = int(input("Target SoC min (0-100): "))
+        target_soc_max = int(input("Target SoC max (0-100): "))
         latitude = float(input("Latitude: "))
         longitude = float(input("Longitude: "))
+        out_of_service = input("Out of service (true/false): ").lower() == 'true'
+        mileage = int(input("Mileage (km): "))
+        last_maintenance_date = input("Last maintenance date (YYYY-MM-DD): ")
         in_service_date = input("In service date (YYYY-MM-DD): ")
         status = input("Status (active/maintenance/retired): ")
         
@@ -543,11 +523,16 @@ def add_scooter_flow(app, current_user: CurrentUser):
             brand=brand,
             model=model,
             serial_number=serial_number,
-            max_speed=max_speed,
+            top_speed=top_speed,
             battery_capacity=battery_capacity,
             soc=soc,
+            target_soc_min=target_soc_min,
+            target_soc_max=target_soc_max,
             latitude=latitude,
             longitude=longitude,
+            out_of_service=out_of_service,
+            mileage=mileage,
+            last_maintenance_date=last_maintenance_date,
             in_service_date=in_service_date,
             status=status
         )
@@ -560,9 +545,8 @@ def add_scooter_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to add scooter. Please try again.")
 
-
 def search_scooter_flow(app, current_user: CurrentUser):
-    """Search for scooters."""
+
     print("\n" + "-"*30)
     print("SEARCH SCOOTER")
     print("-"*30)
@@ -589,17 +573,15 @@ def search_scooter_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to search scooters. Please try again.")
 
-
 def update_scooter_flow(app, current_user: CurrentUser):
-    """Update scooter information."""
+
     print("\n" + "-"*30)
     print("UPDATE SCOOTER")
     print("-"*30)
     
     try:
         scooter_id = int(input("Scooter ID: "))
-        
-        # Get current scooter info
+
         scooter = app.get_scooter(current_user, scooter_id)
         if not scooter:
             print("Scooter not found.")
@@ -609,7 +591,7 @@ def update_scooter_flow(app, current_user: CurrentUser):
         print(f"Brand: {scooter['brand']}")
         print(f"Model: {scooter['model']}")
         print(f"Serial: {scooter['serial_number']}")
-        print(f"Max Speed: {scooter['max_speed']} km/h")
+        print(f"Top Speed: {scooter['top_speed']} km/h")
         print(f"Battery: {scooter['battery_capacity']} Ah")
         print(f"SoC: {scooter['soc']}%")
         print(f"Location: {scooter['latitude']}, {scooter['longitude']}")
@@ -653,17 +635,15 @@ def update_scooter_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to update scooter. Please try again.")
 
-
 def delete_scooter_flow(app, current_user: CurrentUser):
-    """Delete a scooter."""
+
     print("\n" + "-"*30)
     print("DELETE SCOOTER")
     print("-"*30)
     
     try:
         scooter_id = int(input("Scooter ID: "))
-        
-        # Get scooter info for confirmation
+
         scooter = app.get_scooter(current_user, scooter_id)
         if not scooter:
             print("Scooter not found.")
@@ -694,9 +674,8 @@ def delete_scooter_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to delete scooter. Please try again.")
 
-
 def create_service_engineer_flow(app, current_user: CurrentUser):
-    """Create a new Service Engineer."""
+
     print("\n" + "-"*30)
     print("CREATE SERVICE ENGINEER")
     print("-"*30)
@@ -723,9 +702,8 @@ def create_service_engineer_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to create Service Engineer. Please try again.")
 
-
 def update_service_engineer_flow(app, current_user: CurrentUser):
-    """Update Service Engineer profile."""
+
     print("\n" + "-"*30)
     print("UPDATE SERVICE ENGINEER")
     print("-"*30)
@@ -739,8 +717,7 @@ def update_service_engineer_flow(app, current_user: CurrentUser):
         print("Enter new values (press Enter to keep current value):")
         first_name = input("New first name: ")
         last_name = input("New last name: ")
-        
-        # Only pass non-empty values
+
         updates = {}
         if first_name:
             updates['first_name'] = first_name
@@ -759,9 +736,8 @@ def update_service_engineer_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to update Service Engineer. Please try again.")
 
-
 def delete_service_engineer_flow(app, current_user: CurrentUser):
-    """Delete a Service Engineer."""
+
     print("\n" + "-"*30)
     print("DELETE SERVICE ENGINEER")
     print("-"*30)
@@ -785,9 +761,8 @@ def delete_service_engineer_flow(app, current_user: CurrentUser):
     except Exception as e:
         print("Failed to delete Service Engineer. Please try again.")
 
-
 def reset_service_engineer_password_flow(app, current_user: CurrentUser):
-    """Reset Service Engineer password."""
+
     print("\n" + "-"*30)
     print("RESET SERVICE ENGINEER PASSWORD")
     print("-"*30)

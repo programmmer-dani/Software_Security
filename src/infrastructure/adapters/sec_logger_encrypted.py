@@ -1,4 +1,4 @@
-# src/infrastructure/adapters/sec_logger_encrypted.py
+
 
 from src.application.ports.sec_logger import SecLogger
 from src.infrastructure.logging.sec_logger import log, read_all

@@ -1,4 +1,4 @@
-# src/infrastructure/crypto/fernet_box.py
+
 
 import os
 from cryptography.fernet import Fernet
