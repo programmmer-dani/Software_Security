@@ -72,9 +72,18 @@ def update(scooter_id: int, **kwargs) -> bool:
     if not kwargs:
         return False
     
+    # Whitelist of allowed column names to prevent SQL injection
+    allowed_columns = {
+        'brand', 'model', 'serial_number', 'top_speed', 'battery_capacity', 
+        'soc', 'target_soc_min', 'target_soc_max', 'latitude', 'longitude',
+        'out_of_service', 'mileage', 'last_maintenance_date', 'in_service_date', 'status'
+    }
+    
     set_clauses = []
     values = []
     for key, value in kwargs.items():
+        if key not in allowed_columns:
+            raise ValueError(f"Invalid column name: {key}")
         set_clauses.append(f"{key} = ?")
         values.append(value)
     

@@ -48,3 +48,39 @@ def update_password(user_id: int, new_hash: str):
     with db_transaction() as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (new_hash, user_id))
+        return cursor.rowcount > 0
+
+def update_profile(user_id: int, **kwargs):
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
+        cursor = conn.cursor()
+        
+        if not kwargs:
+            return False
+        
+        set_clauses = []
+        values = []
+        
+        for key, value in kwargs.items():
+            if key == 'first_name':
+                set_clauses.append('first_name_enc = ?')
+                values.append(encrypt(value))
+            elif key == 'last_name':
+                set_clauses.append('last_name_enc = ?')
+                values.append(encrypt(value))
+        
+        if not set_clauses:
+            return False
+        
+        values.append(user_id)
+        query = f"UPDATE users SET {', '.join(set_clauses)} WHERE id = ?"
+        cursor.execute(query, values)
+        
+        return cursor.rowcount > 0
+
+def delete(user_id: int):
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        return cursor.rowcount > 0

@@ -2,8 +2,8 @@
 
 import secrets
 from src.application.use_cases.auth import login as auth_login, change_password as auth_change_password
-from src.application.security.acl import CurrentUser, require_admin, require_engineer_or_admin
-from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude
+from src.application.security.acl import CurrentUser, require_admin, require_engineer_or_admin, require_super_admin
+from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude, validate_email
 from src.domain.errors import ValidationError
 from src.domain.constants import ROLES
 from src.domain.models import User, Traveller, RestoreCode
@@ -33,7 +33,7 @@ class App:
         self.crypto_box = crypto_box
         self.logger = logger
         self.backup_store = backup_store
-
+    
     def login(self, username: str, password: str) -> CurrentUser:
         return auth_login(self, username, password)
     
@@ -44,16 +44,16 @@ class App:
 
         if not can_create_sys_admin(current_user.role):
             raise ValidationError("Access denied. Insufficient permissions.")
-
+        
         validated_username = validate_username(username)
         validated_password = validate_password(password)
-
-        username_norm = validated_username
-
+        
+        username_norm = validated_username.lower()
+        
         user = User.new_sys_admin(username_norm, first_name, last_name)
-
+        
         pw_hash = self.password_hasher.hash(validated_password)
-
+        
         self.user_repo.add(
             username_norm,
             pw_hash,
@@ -62,11 +62,92 @@ class App:
             user.last_name,
             user.registered_at
         )
+        
+        self.logger.log('sys_admin_created', current_user.username_norm, 
+                       {'created_username': username_norm}, False)
+    
+    def update_sys_admin(self, current_user: CurrentUser, admin_username: str, **kwargs):
+        require_super_admin(current_user)
+        
+        # Get the system admin user
+        admin_user = self.user_repo.get_by_username_norm(admin_username)
+        if not admin_user:
+            raise ValidationError("System Admin not found")
+        
+        if admin_user['role'] != ROLES[1]:  # SYS_ADMIN
+            raise ValidationError("User is not a System Admin")
+        
+        # Validate fields that are being updated
+        update_data = {}
+        
+        if 'first_name' in kwargs:
+            update_data['first_name'] = _validate_input(kwargs['first_name'], "First name")
+        if 'last_name' in kwargs:
+            update_data['last_name'] = _validate_input(kwargs['last_name'], "Last name")
+        
+        if not update_data:
+            raise ValidationError("No valid fields to update")
+        
+        # Update the user
+        success = self.user_repo.update_profile(admin_user['id'], **update_data)
+        if not success:
+            raise ValidationError("Failed to update System Admin")
+        
+        self.logger.log('sys_admin_updated', current_user.username_norm, 
+                       {'updated_username': admin_username, 'updated_fields': list(update_data.keys())}, False)
+        
+        return True
+    
+    def delete_sys_admin(self, current_user: CurrentUser, admin_username: str):
+        require_super_admin(current_user)
+        
+        # Get the system admin user
+        admin_user = self.user_repo.get_by_username_norm(admin_username)
+        if not admin_user:
+            raise ValidationError("System Admin not found")
+        
+        if admin_user['role'] != ROLES[1]:  # SYS_ADMIN
+            raise ValidationError("User is not a System Admin")
+        
+        # Delete the user
+        success = self.user_repo.delete(admin_user['id'])
+        if not success:
+            raise ValidationError("Failed to delete System Admin")
+        
+        self.logger.log('sys_admin_deleted', current_user.username_norm, 
+                       {'deleted_username': admin_username}, False)
+        
+        return True
+    
+    def reset_sys_admin_password(self, current_user: CurrentUser, admin_username: str, new_password: str):
+        require_super_admin(current_user)
+        
+        # Get the system admin user
+        admin_user = self.user_repo.get_by_username_norm(admin_username)
+        if not admin_user:
+            raise ValidationError("System Admin not found")
+        
+        if admin_user['role'] != ROLES[1]:  # SYS_ADMIN
+            raise ValidationError("User is not a System Admin")
+        
+        # Validate new password
+        validated_password = validate_password(new_password)
+        new_hash = self.password_hasher.hash(validated_password)
+        
+        # Update password
+        success = self.user_repo.update_password(admin_user['id'], new_hash)
+        if not success:
+            raise ValidationError("Failed to reset System Admin password")
+        
+        self.logger.log('sys_admin_password_reset', current_user.username_norm, 
+                       {'reset_username': admin_username}, False)
+        
+        return True
     
     def add_traveller(self, current_user: CurrentUser, first_name: str, last_name: str, birthday: str, gender: str,
                      street: str, house_no: str, zip_code: str, city: str, email: str, phone: str, license_no: str):
         require_engineer_or_admin(current_user)
-
+        
         first_name = _validate_input(first_name, "First name")
         last_name = _validate_input(last_name, "Last name")
         birthday = validate_birthday(birthday)
@@ -75,13 +156,13 @@ class App:
         house_no = _validate_input(house_no, "House number")
         zip_code = validate_zip(zip_code)
         city = validate_city(city)
-        email = _validate_input(email, "Email")
+        email = validate_email(email)
         phone = validate_phone(phone)
         license_no = validate_license(license_no)
-
+        
         random_suffix = secrets.randbelow(10000)
         customer_id = generate_customer_id(f"_{random_suffix:04d}")
-
+        
         traveller = Traveller.new_with_customer_id(
             customer_id=customer_id,
             first_name=first_name,
@@ -96,7 +177,7 @@ class App:
             phone=phone,
             license=license_no
         )
-
+        
         self.traveller_repo.add(
             traveller.customer_id,
             traveller.first_name,
@@ -123,7 +204,7 @@ class App:
             first_name = self.crypto_box.decrypt(traveller['first_name_enc'])
             last_name = self.crypto_box.decrypt(traveller['last_name_enc'])
             customer_id = traveller['customer_id']
-
+            
             from src.domain.services import matches_partial
             if (matches_partial(first_name, search_term) or 
                 matches_partial(last_name, search_term) or 
@@ -131,6 +212,78 @@ class App:
                 matches.append(traveller)
         
         return matches
+
+    def get_traveller(self, current_user: CurrentUser, traveller_id: int):
+        require_engineer_or_admin(current_user)
+        
+        traveller = self.traveller_repo.get_by_id(traveller_id)
+        if not traveller:
+            raise ValidationError("Traveller not found")
+        
+        return traveller
+
+    def update_traveller(self, current_user: CurrentUser, traveller_id: int, **kwargs):
+        require_engineer_or_admin(current_user)
+        
+        # Check if traveller exists
+        traveller = self.traveller_repo.get_by_id(traveller_id)
+        if not traveller:
+            raise ValidationError("Traveller not found")
+        
+        # Validate fields that are being updated
+        update_data = {}
+        
+        if 'first_name' in kwargs:
+            update_data['first_name'] = _validate_input(kwargs['first_name'], "First name")
+        if 'last_name' in kwargs:
+            update_data['last_name'] = _validate_input(kwargs['last_name'], "Last name")
+        if 'birthday' in kwargs:
+            update_data['birthday'] = validate_birthday(kwargs['birthday'])
+        if 'gender' in kwargs:
+            update_data['gender'] = validate_gender(kwargs['gender'])
+        if 'street' in kwargs:
+            update_data['street'] = _validate_input(kwargs['street'], "Street")
+        if 'house_no' in kwargs:
+            update_data['house_no'] = _validate_input(kwargs['house_no'], "House number")
+        if 'zip_code' in kwargs:
+            update_data['zip_code'] = validate_zip(kwargs['zip_code'])
+        if 'city' in kwargs:
+            update_data['city'] = validate_city(kwargs['city'])
+        if 'email' in kwargs:
+            update_data['email'] = _validate_input(kwargs['email'], "Email")
+        if 'phone' in kwargs:
+            update_data['phone'] = validate_phone(kwargs['phone'])
+        if 'license' in kwargs:
+            update_data['license'] = validate_license(kwargs['license'])
+        
+        if not update_data:
+            raise ValidationError("No valid fields to update")
+        
+        success = self.traveller_repo.update(traveller_id, **update_data)
+        if not success:
+            raise ValidationError("Failed to update traveller")
+        
+        self.logger.log('traveller_updated', current_user.username_norm, 
+                       {'traveller_id': traveller_id, 'updated_fields': list(update_data.keys())}, False)
+        
+        return True
+
+    def delete_traveller(self, current_user: CurrentUser, traveller_id: int):
+        require_engineer_or_admin(current_user)
+        
+        # Check if traveller exists
+        traveller = self.traveller_repo.get_by_id(traveller_id)
+        if not traveller:
+            raise ValidationError("Traveller not found")
+        
+        success = self.traveller_repo.delete(traveller_id)
+        if not success:
+            raise ValidationError("Failed to delete traveller")
+        
+        self.logger.log('traveller_deleted', current_user.username_norm, 
+                       {'traveller_id': traveller_id}, False)
+        
+        return True
     
     def create_backup(self, current_user: CurrentUser):
 
@@ -143,18 +296,18 @@ class App:
 
         if not can_generate_restore_code(current_user.role):
             raise ValidationError("Access denied. Insufficient permissions.")
-
+        
         username_norm = validate_username(target_username)
 
         target_user = self.user_repo.get_by_username_norm(username_norm)
         if not target_user:
             raise ValidationError("Target user not found")
-
+        
         restore_code_model = RestoreCode.new(backup_name, target_user['id'])
-
+        
         restore_code = secrets.token_urlsafe(32)
         code_hash = self.password_hasher.hash_token(restore_code)
-
+        
         self.restore_code_repo.insert(backup_name, target_user['id'], code_hash)
         return restore_code
     
@@ -162,7 +315,7 @@ class App:
 
         if not can_restore_any_backup(current_user.role):
             raise ValidationError("Access denied. Super Admin cannot restore backups directly.")
-
+        
         self.backup_store.restore_from_backup(backup_name)
         return True
     
@@ -170,7 +323,7 @@ class App:
 
         if not can_restore_with_code(current_user.role):
             raise ValidationError("Access denied. Only System Admin can restore with restore codes.")
-
+        
         if not can_consume_restore_code(current_user.role):
             raise ValidationError("Access denied. Super Admin cannot consume restore codes.")
         
@@ -180,7 +333,7 @@ class App:
             self.backup_store.restore_from_backup(backup_name)
             return True
         else:
-            return False
+            raise ValidationError("Invalid or already used restore code")
     
     def view_logs(self, current_user: CurrentUser):
         require_admin(current_user)
@@ -300,12 +453,14 @@ class App:
         validated_username = validate_username(username)
         validated_password = validate_password(password)
 
-        user = User.new_service_engineer(validated_username, first_name, last_name)
+        username_norm = validated_username.lower()
+
+        user = User.new_service_engineer(username_norm, first_name, last_name)
 
         pw_hash = self.password_hasher.hash(validated_password)
 
         self.user_repo.add(
-            validated_username,
+            username_norm,
             pw_hash,
             user.role,
             user.first_name,

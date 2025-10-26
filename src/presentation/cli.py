@@ -132,20 +132,22 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("A) Change My Password")
         print("B) Add Traveller")
         print("C) Search Traveller")
-        print("D) Add Scooter")
-        print("E) Search Scooter")
-        print("F) Update Scooter")
-        print("G) Delete Scooter")
-        print("H) Create Service Engineer")
-        print("I) Update Service Engineer")
-        print("J) Delete Service Engineer")
-        print("K) Reset Service Engineer Password")
-        print("L) Restore from Backup (with code)")
-        print("M) Create Backup")
-        print("N) View Logs")
-        print("O) Logout")
+        print("D) Update Traveller")
+        print("E) Delete Traveller")
+        print("F) Add Scooter")
+        print("G) Search Scooter")
+        print("H) Update Scooter")
+        print("I) Delete Scooter")
+        print("J) Create Service Engineer")
+        print("K) Update Service Engineer")
+        print("L) Delete Service Engineer")
+        print("M) Reset Service Engineer Password")
+        print("N) Restore from Backup (with code)")
+        print("O) Create Backup")
+        print("P) View Logs")
+        print("Q) Logout")
         
-        choice = input("\nChoose option (A-O): ")
+        choice = input("\nChoose option (A-Q): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -154,28 +156,32 @@ def sys_admin_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "C":
             search_traveller_flow(app, current_user)
         elif choice == "D":
-            add_scooter_flow(app, current_user)
+            update_traveller_flow(app, current_user)
         elif choice == "E":
-            search_scooter_flow(app, current_user)
+            delete_traveller_flow(app, current_user)
         elif choice == "F":
-            update_scooter_flow(app, current_user)
+            add_scooter_flow(app, current_user)
         elif choice == "G":
-            delete_scooter_flow(app, current_user)
+            search_scooter_flow(app, current_user)
         elif choice == "H":
-            create_service_engineer_flow(app, current_user)
+            update_scooter_flow(app, current_user)
         elif choice == "I":
-            update_service_engineer_flow(app, current_user)
+            delete_scooter_flow(app, current_user)
         elif choice == "J":
-            delete_service_engineer_flow(app, current_user)
+            create_service_engineer_flow(app, current_user)
         elif choice == "K":
-            reset_service_engineer_password_flow(app, current_user)
+            update_service_engineer_flow(app, current_user)
         elif choice == "L":
-            restore_from_backup_with_code_flow(app, current_user)
+            delete_service_engineer_flow(app, current_user)
         elif choice == "M":
-            create_backup_flow(app, current_user)
+            reset_service_engineer_password_flow(app, current_user)
         elif choice == "N":
-            view_logs(app, current_user)
+            restore_from_backup_with_code_flow(app, current_user)
         elif choice == "O":
+            create_backup_flow(app, current_user)
+        elif choice == "P":
+            view_logs(app, current_user)
+        elif choice == "Q":
             return None
         else:
             print("Invalid option. Please choose A-O.")
@@ -189,11 +195,13 @@ def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         print("A) Change My Password")
         print("B) Add Traveller")
         print("C) Search Traveller")
-        print("D) Search Scooter")
-        print("E) Update Scooter")
-        print("F) Logout")
+        print("D) Update Traveller")
+        print("E) Delete Traveller")
+        print("F) Search Scooter")
+        print("G) Update Scooter")
+        print("H) Logout")
         
-        choice = input("\nChoose option (A-F): ")
+        choice = input("\nChoose option (A-H): ")
         
         if choice == "A":
             change_password_flow(app, current_user)
@@ -202,13 +210,17 @@ def engineer_menu(app, current_user: CurrentUser) -> Optional[CurrentUser]:
         elif choice == "C":
             search_traveller_flow(app, current_user)
         elif choice == "D":
-            search_scooter_flow(app, current_user)
+            update_traveller_flow(app, current_user)
         elif choice == "E":
-            update_scooter_flow(app, current_user)
+            delete_traveller_flow(app, current_user)
         elif choice == "F":
+            search_scooter_flow(app, current_user)
+        elif choice == "G":
+            update_scooter_flow(app, current_user)
+        elif choice == "H":
             return None
         else:
-            print("Invalid option. Please choose A-F.")
+            print("Invalid option. Please choose A-H.")
 
 def create_system_admin(app, current_user: CurrentUser):
 
@@ -333,6 +345,115 @@ def search_traveller_flow(app, current_user: CurrentUser):
             
     except Exception as e:
         print("Failed to search travellers. Please try again.")
+
+def update_traveller_flow(app, current_user: CurrentUser):
+    print("\n" + "-"*30)
+    print("UPDATE TRAVELLER")
+    print("-"*30)
+    
+    try:
+        traveller_id = int(input("Enter traveller ID to update: "))
+        
+        # Get current traveller data
+        traveller = app.get_traveller(current_user, traveller_id)
+        
+        print(f"\nCurrent traveller: {app.crypto_box.decrypt(traveller['first_name_enc'])} {app.crypto_box.decrypt(traveller['last_name_enc'])}")
+        print("Enter new values (press Enter to keep current value):")
+        
+        # Get updated values
+        update_data = {}
+        
+        first_name = input(f"First name [{app.crypto_box.decrypt(traveller['first_name_enc'])}]: ").strip()
+        if first_name:
+            update_data['first_name'] = first_name
+            
+        last_name = input(f"Last name [{app.crypto_box.decrypt(traveller['last_name_enc'])}]: ").strip()
+        if last_name:
+            update_data['last_name'] = last_name
+            
+        birthday = input(f"Birthday (YYYY-MM-DD) [{traveller['birthday']}]: ").strip()
+        if birthday:
+            update_data['birthday'] = birthday
+            
+        gender = input(f"Gender (male/female) [{traveller['gender']}]: ").strip()
+        if gender:
+            update_data['gender'] = gender
+            
+        street = input(f"Street [{app.crypto_box.decrypt(traveller['street_enc'])}]: ").strip()
+        if street:
+            update_data['street'] = street
+            
+        house_no = input(f"House number [{app.crypto_box.decrypt(traveller['house_no_enc'])}]: ").strip()
+        if house_no:
+            update_data['house_no'] = house_no
+            
+        zip_code = input(f"Zip code [{app.crypto_box.decrypt(traveller['zip_enc'])}]: ").strip()
+        if zip_code:
+            update_data['zip_code'] = zip_code
+            
+        city = input(f"City [{traveller['city']}]: ").strip()
+        if city:
+            update_data['city'] = city
+            
+        email = input(f"Email [{app.crypto_box.decrypt(traveller['email_enc'])}]: ").strip()
+        if email:
+            update_data['email'] = email
+            
+        phone = input(f"Phone [{app.crypto_box.decrypt(traveller['phone_enc'])}]: ").strip()
+        if phone:
+            update_data['phone'] = phone
+            
+        license_no = input(f"License [{app.crypto_box.decrypt(traveller['license_enc'])}]: ").strip()
+        if license_no:
+            update_data['license'] = license_no
+        
+        if not update_data:
+            print("No changes made.")
+            return
+        
+        # Update traveller
+        success = app.update_traveller(current_user, traveller_id, **update_data)
+        
+        if success:
+            print("Traveller updated successfully!")
+        else:
+            print("Failed to update traveller.")
+            
+    except ValueError:
+        print("Invalid traveller ID. Please enter a number.")
+    except Exception as e:
+        print(f"Failed to update traveller: {e}")
+
+def delete_traveller_flow(app, current_user: CurrentUser):
+    print("\n" + "-"*30)
+    print("DELETE TRAVELLER")
+    print("-"*30)
+    
+    try:
+        traveller_id = int(input("Enter traveller ID to delete: "))
+        
+        # Get traveller data to show confirmation
+        traveller = app.get_traveller(current_user, traveller_id)
+        first_name = app.crypto_box.decrypt(traveller['first_name_enc'])
+        last_name = app.crypto_box.decrypt(traveller['last_name_enc'])
+        
+        print(f"\nTraveller to delete: {first_name} {last_name} (ID: {traveller_id})")
+        confirm = input("Are you sure you want to delete this traveller? (yes/no): ").strip().lower()
+        
+        if confirm == 'yes':
+            success = app.delete_traveller(current_user, traveller_id)
+            
+            if success:
+                print("Traveller deleted successfully!")
+            else:
+                print("Failed to delete traveller.")
+        else:
+            print("Deletion cancelled.")
+            
+    except ValueError:
+        print("Invalid traveller ID. Please enter a number.")
+    except Exception as e:
+        print(f"Failed to delete traveller: {e}")
 
 def create_backup_flow(app, current_user: CurrentUser):
 

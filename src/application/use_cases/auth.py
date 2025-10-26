@@ -34,8 +34,17 @@ def login(app, username: str, password: str) -> CurrentUser:
 
         validate_username(username)
 
-        username_norm = username
+        username_norm = username.lower()
     except ValidationError:
+        # Log invalid username format as failed login attempt
+        app.logger.log('login_failed', username, {'reason': 'invalid_username_format'}, False)
+        record_failed_login(username)
+        
+        # Check if this triggers suspicious activity
+        if is_failed_login_suspicious(username):
+            app.logger.log('suspicious_activity', username, {'reason': 'multiple_failed_logins'}, True)
+            _set_cooldown(username)
+            raise ValidationError("Please wait a moment before trying again")
 
         raise ValidationError("Invalid credentials")
 
