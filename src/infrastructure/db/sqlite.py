@@ -1,7 +1,6 @@
 
 
 import sqlite3
-from pathlib import Path
 from contextlib import contextmanager
 from datetime import datetime
 from src.infrastructure.config import DATABASE_FILE

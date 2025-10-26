@@ -1,8 +1,7 @@
 
 
-from datetime import datetime
 from .sqlite import db_connection, db_transaction
-from src.infrastructure.crypto.fernet_box import encrypt, decrypt
+from src.infrastructure.crypto.fernet_box import encrypt
 
 def add(customer_id: str, first_name: str, last_name: str, birthday: str, gender: str,
         street: str, house_no: str, zip_code: str, city: str, email: str, phone: str, license: str, registered_at: str):

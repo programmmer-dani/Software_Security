@@ -6,7 +6,7 @@ import os
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.infrastructure.db.sqlite import migrate, get_conn
+from src.infrastructure.db.sqlite import migrate
 from src.application.facade import App
 from src.presentation import cli
 from src.infrastructure.adapters.user_repo_sqlite import UserRepoSqlite

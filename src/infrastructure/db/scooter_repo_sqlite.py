@@ -1,6 +1,5 @@
 
 
-import sqlite3
 from src.infrastructure.db.sqlite import db_connection
 
 def add(brand: str, model: str, serial_number: str, top_speed: int, 

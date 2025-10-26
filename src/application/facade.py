@@ -2,11 +2,11 @@
 
 import secrets
 from src.application.use_cases.auth import login as auth_login, change_password as auth_change_password
-from src.application.security.acl import CurrentUser, require_super_admin, require_admin, require_engineer_or_admin
+from src.application.security.acl import CurrentUser, require_admin, require_engineer_or_admin
 from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude
 from src.domain.errors import ValidationError
 from src.domain.constants import ROLES
-from src.domain.models import User, Traveller, RestoreCode, Scooter
+from src.domain.models import User, Traveller, RestoreCode
 from src.domain.policies import can_create_sys_admin, can_create_backup, can_generate_restore_code, can_restore_any_backup, can_restore_with_code, can_consume_restore_code
 from src.domain.services import generate_customer_id
 from src.application.ports.user_repo import UserRepo

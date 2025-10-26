@@ -5,7 +5,6 @@ import shutil
 import os
 import sqlite3
 from datetime import datetime
-from pathlib import Path
 from src.infrastructure.config import DATABASE_FILE, BACKUP_FOLDER
 from src.infrastructure.logging.sec_logger import log
 
