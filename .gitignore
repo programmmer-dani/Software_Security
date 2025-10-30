@@ -1,0 +1,51 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Packaging/build
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.*
+
+# OS/Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Testing/coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+
+# Logs
+*.log
+logs/
+
+# Databases and app data
+*.sqlite3
+*.db
+
+data/app.db
+data/backups/
+data/keys/
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
