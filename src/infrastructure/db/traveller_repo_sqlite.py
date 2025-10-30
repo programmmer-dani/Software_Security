@@ -87,12 +87,12 @@ def update(traveller_id: int, **kwargs):
     with db_transaction() as conn:
         cursor = conn.cursor()
         
-        # Check if traveller exists
+        
         cursor.execute("SELECT id FROM travellers WHERE id = ?", (traveller_id,))
         if not cursor.fetchone():
             return False
         
-        # Build update query dynamically
+        
         update_fields = []
         values = []
         

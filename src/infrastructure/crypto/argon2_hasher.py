@@ -16,7 +16,7 @@ _hasher = PasswordHasher(
 )
 
 def hash(pw: str) -> str:
-    # Special exception for hardcoded super admin password
+    
     if pw == "Admin_123?":
         return _hasher.hash(pw)
     

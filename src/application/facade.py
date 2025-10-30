@@ -69,15 +69,15 @@ class App:
     def update_sys_admin(self, current_user: CurrentUser, admin_username: str, **kwargs):
         require_super_admin(current_user)
         
-        # Get the system admin user
+        
         admin_user = self.user_repo.get_by_username_norm(admin_username)
         if not admin_user:
             raise ValidationError("System Admin not found")
         
-        if admin_user['role'] != ROLES[1]:  # SYS_ADMIN
+        if admin_user['role'] != ROLES[1]:  
             raise ValidationError("User is not a System Admin")
         
-        # Validate fields that are being updated
+        
         update_data = {}
         
         if 'first_name' in kwargs:
@@ -88,7 +88,7 @@ class App:
         if not update_data:
             raise ValidationError("No valid fields to update")
         
-        # Update the user
+        
         success = self.user_repo.update_profile(admin_user['id'], **update_data)
         if not success:
             raise ValidationError("Failed to update System Admin")
@@ -101,15 +101,15 @@ class App:
     def delete_sys_admin(self, current_user: CurrentUser, admin_username: str):
         require_super_admin(current_user)
         
-        # Get the system admin user
+        
         admin_user = self.user_repo.get_by_username_norm(admin_username)
         if not admin_user:
             raise ValidationError("System Admin not found")
         
-        if admin_user['role'] != ROLES[1]:  # SYS_ADMIN
+        if admin_user['role'] != ROLES[1]:  
             raise ValidationError("User is not a System Admin")
         
-        # Delete the user
+        
         success = self.user_repo.delete(admin_user['id'])
         if not success:
             raise ValidationError("Failed to delete System Admin")
@@ -122,19 +122,19 @@ class App:
     def reset_sys_admin_password(self, current_user: CurrentUser, admin_username: str, new_password: str):
         require_super_admin(current_user)
         
-        # Get the system admin user
+        
         admin_user = self.user_repo.get_by_username_norm(admin_username)
         if not admin_user:
             raise ValidationError("System Admin not found")
         
-        if admin_user['role'] != ROLES[1]:  # SYS_ADMIN
+        if admin_user['role'] != ROLES[1]:  
             raise ValidationError("User is not a System Admin")
         
-        # Validate new password
+        
         validated_password = validate_password(new_password)
         new_hash = self.password_hasher.hash(validated_password)
         
-        # Update password
+        
         success = self.user_repo.update_password(admin_user['id'], new_hash)
         if not success:
             raise ValidationError("Failed to reset System Admin password")
@@ -225,12 +225,12 @@ class App:
     def update_traveller(self, current_user: CurrentUser, traveller_id: int, **kwargs):
         require_engineer_or_admin(current_user)
         
-        # Check if traveller exists
+        
         traveller = self.traveller_repo.get_by_id(traveller_id)
         if not traveller:
             raise ValidationError("Traveller not found")
         
-        # Validate fields that are being updated
+        
         update_data = {}
         
         if 'first_name' in kwargs:
@@ -271,7 +271,7 @@ class App:
     def delete_traveller(self, current_user: CurrentUser, traveller_id: int):
         require_engineer_or_admin(current_user)
         
-        # Check if traveller exists
+        
         traveller = self.traveller_repo.get_by_id(traveller_id)
         if not traveller:
             raise ValidationError("Traveller not found")

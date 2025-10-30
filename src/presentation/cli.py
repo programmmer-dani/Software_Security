@@ -354,13 +354,13 @@ def update_traveller_flow(app, current_user: CurrentUser):
     try:
         traveller_id = int(input("Enter traveller ID to update: "))
         
-        # Get current traveller data
+        
         traveller = app.get_traveller(current_user, traveller_id)
         
         print(f"\nCurrent traveller: {app.crypto_box.decrypt(traveller['first_name_enc'])} {app.crypto_box.decrypt(traveller['last_name_enc'])}")
         print("Enter new values (press Enter to keep current value):")
         
-        # Get updated values
+        
         update_data = {}
         
         first_name = input(f"First name [{app.crypto_box.decrypt(traveller['first_name_enc'])}]: ").strip()
@@ -411,7 +411,7 @@ def update_traveller_flow(app, current_user: CurrentUser):
             print("No changes made.")
             return
         
-        # Update traveller
+        
         success = app.update_traveller(current_user, traveller_id, **update_data)
         
         if success:
@@ -432,7 +432,7 @@ def delete_traveller_flow(app, current_user: CurrentUser):
     try:
         traveller_id = int(input("Enter traveller ID to delete: "))
         
-        # Get traveller data to show confirmation
+        
         traveller = app.get_traveller(current_user, traveller_id)
         first_name = app.crypto_box.decrypt(traveller['first_name_enc'])
         last_name = app.crypto_box.decrypt(traveller['last_name_enc'])

@@ -72,7 +72,7 @@ def update(scooter_id: int, **kwargs) -> bool:
     if not kwargs:
         return False
     
-    # Whitelist of allowed column names to prevent SQL injection
+    
     allowed_columns = {
         'brand', 'model', 'serial_number', 'top_speed', 'battery_capacity', 
         'soc', 'target_soc_min', 'target_soc_max', 'latitude', 'longitude',
