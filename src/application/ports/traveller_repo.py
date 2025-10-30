@@ -1,7 +1,7 @@
-# src/application/ports/traveller_repo.py
+
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class TravellerRepo(ABC):
     @abstractmethod
@@ -11,4 +11,16 @@ class TravellerRepo(ABC):
     
     @abstractmethod
     def all(self) -> List[Dict[str, Any]]:
+        pass
+    
+    @abstractmethod
+    def get_by_id(self, traveller_id: int) -> Optional[Dict[str, Any]]:
+        pass
+    
+    @abstractmethod
+    def update(self, traveller_id: int, **kwargs) -> bool:
+        pass
+    
+    @abstractmethod
+    def delete(self, traveller_id: int) -> bool:
         pass

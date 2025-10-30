@@ -1,7 +1,7 @@
-# src/infrastructure/adapters/user_repo_sqlite.py
+
 
 from src.application.ports.user_repo import UserRepo
-from src.infrastructure.db.user_repo_sqlite import get_by_username_norm, add, update_password
+from src.infrastructure.db.user_repo_sqlite import get_by_username_norm, add, update_password, update_profile, delete
 
 class UserRepoSqlite(UserRepo):
     def get_by_username_norm(self, username_norm: str):
@@ -10,5 +10,11 @@ class UserRepoSqlite(UserRepo):
     def add(self, username_norm: str, pw_hash: str, role: str, first_name: str, last_name: str, registered_at: str) -> int:
         return add(username_norm, pw_hash, role, first_name, last_name, registered_at)
     
-    def update_password(self, user_id: int, new_hash: str) -> None:
+    def update_password(self, user_id: int, new_hash: str) -> bool:
         return update_password(user_id, new_hash)
+    
+    def update_profile(self, user_id: int, **kwargs) -> bool:
+        return update_profile(user_id, **kwargs)
+    
+    def delete(self, user_id: int) -> bool:
+        return delete(user_id)

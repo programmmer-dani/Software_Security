@@ -1,8 +1,7 @@
-# src/infrastructure/crypto/fernet_box.py
+
 
 import os
 from cryptography.fernet import Fernet
-from pathlib import Path
 from src.infrastructure.config import ENCRYPTION_KEY_FILE
 
 def _get_key():

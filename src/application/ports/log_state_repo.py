@@ -1,4 +1,4 @@
-# src/application/ports/log_state_repo.py
+
 
 from abc import ABC, abstractmethod
 

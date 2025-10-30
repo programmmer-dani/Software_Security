@@ -1,4 +1,4 @@
-# src/infrastructure/adapters/crypto_box_fernet.py
+
 
 from src.application.ports.crypto_box import CryptoBox
 from src.infrastructure.crypto.fernet_box import encrypt, decrypt

@@ -1,20 +1,17 @@
-# src/infrastructure/db/user_repo_sqlite.py
 
-from datetime import datetime
-from .sqlite import get_conn
+
+from .sqlite import db_connection
 from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
 def get_by_username_norm(username_norm: str):
-    conn = get_conn()
-    try:
+    with db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username_norm = ?", (username_norm,))
         row = cursor.fetchone()
         
         if not row:
             return None
-        
-        # Decrypt sensitive fields
+
         return {
             'id': row[0],
             'username_norm': row[1],
@@ -25,12 +22,10 @@ def get_by_username_norm(username_norm: str):
             'last_name': decrypt(row[6]),
             'registered_at': row[7]
         }
-    finally:
-        conn.close()
 
 def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name: str, registered_at: str):
-    conn = get_conn()
-    try:
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -38,7 +33,7 @@ def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name:
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             username_norm,
-            encrypt(username_norm),  # Use normalized username for encryption
+            encrypt(username_norm),
             pw_hash,
             role,
             encrypt(first_name),
@@ -46,16 +41,46 @@ def add(username_norm: str, pw_hash: str, role: str, first_name: str, last_name:
             registered_at
         ))
         
-        conn.commit()
         return cursor.lastrowid
-    finally:
-        conn.close()
 
 def update_password(user_id: int, new_hash: str):
-    conn = get_conn()
-    try:
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET pw_hash = ? WHERE id = ?", (new_hash, user_id))
-        conn.commit()
-    finally:
-        conn.close()
+        return cursor.rowcount > 0
+
+def update_profile(user_id: int, **kwargs):
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
+        cursor = conn.cursor()
+        
+        if not kwargs:
+            return False
+        
+        set_clauses = []
+        values = []
+        
+        for key, value in kwargs.items():
+            if key == 'first_name':
+                set_clauses.append('first_name_enc = ?')
+                values.append(encrypt(value))
+            elif key == 'last_name':
+                set_clauses.append('last_name_enc = ?')
+                values.append(encrypt(value))
+        
+        if not set_clauses:
+            return False
+        
+        values.append(user_id)
+        query = f"UPDATE users SET {', '.join(set_clauses)} WHERE id = ?"
+        cursor.execute(query, values)
+        
+        return cursor.rowcount > 0
+
+def delete(user_id: int):
+    from .sqlite import db_transaction
+    with db_transaction() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        return cursor.rowcount > 0

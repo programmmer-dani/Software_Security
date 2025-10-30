@@ -1,4 +1,4 @@
-# src/domain/models.py
+
 
 from dataclasses import dataclass
 from typing import Optional
@@ -21,7 +21,20 @@ class User:
         return cls(
             id=None,
             username_norm=username_norm,
-            role=ROLES[1],  # SYS_ADMIN
+            role=ROLES[1],
+            first_name=first_name,
+            last_name=last_name,
+            registered_at=registered_at
+        )
+    
+    @classmethod
+    def new_service_engineer(cls, username_norm: str, first_name: str = "", last_name: str = "", registered_at: str = None):
+        if registered_at is None:
+            registered_at = datetime.now().isoformat()
+        return cls(
+            id=None,
+            username_norm=username_norm,
+            role=ROLES[2],
             first_name=first_name,
             last_name=last_name,
             registered_at=registered_at
@@ -68,6 +81,25 @@ class Traveller:
             license=license,
             registered_at=registered_at
         )
+
+@dataclass
+class Scooter:
+    id: Optional[int]
+    brand: str
+    model: str
+    serial_number: str
+    top_speed: int
+    battery_capacity: int
+    soc: int
+    target_soc_min: int
+    target_soc_max: int
+    latitude: float
+    longitude: float
+    out_of_service: bool
+    mileage: int
+    last_maintenance_date: str
+    in_service_date: str
+    status: str
 
 @dataclass
 class RestoreCode:

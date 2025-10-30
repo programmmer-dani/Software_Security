@@ -1,13 +1,12 @@
-# src/infrastructure/logging/sec_logger.py
+
 
 import json
 from datetime import datetime
-from pathlib import Path
 from src.infrastructure.config import ENCRYPTION_LOGS_FILE
 from src.infrastructure.crypto.fernet_box import encrypt, decrypt
 
 def _get_next_rowid():
-    # Get the next rowid by reading existing logs and finding the highest rowid
+
     existing_logs = read_all()
     if not existing_logs:
         return 1

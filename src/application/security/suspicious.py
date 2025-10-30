@@ -1,10 +1,9 @@
-# src/application/security/suspicious.py
+
 
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from src.domain.policies import FAILED_LOGIN_THRESHOLD, FAILED_LOGIN_WINDOW_MINUTES
 
-# In-memory tracking of failed logins
 _failed_logins = defaultdict(lambda: deque())
 
 def _clean_old_attempts(username: str):
