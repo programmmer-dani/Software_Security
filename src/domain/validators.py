@@ -185,3 +185,63 @@ def validate_longitude(lon: float) -> float:
 def normalize_longitude(lon: float) -> float:
 
     return round(lon, 5)
+
+# Integer validators for scooter numeric fields
+def _parse_int(value, field: str) -> int:
+    try:
+        # Accept int-like strings; reject None and non-numeric
+        if isinstance(value, bool):
+            raise ValueError()
+        return int(value)
+    except Exception:
+        raise ValidationError(f"{field} must be an integer")
+
+def validate_top_speed(value) -> int:
+    if isinstance(value, str):
+        _validate_input(value, "Top speed")
+    elif value is None:
+        raise ValidationError("Top speed cannot be empty")
+    num = _parse_int(value, "Top speed")
+    if num < 0:
+        raise ValidationError("Top speed must be non-negative")
+    return num
+
+def validate_battery_capacity(value) -> int:
+    if isinstance(value, str):
+        _validate_input(value, "Battery capacity")
+    elif value is None:
+        raise ValidationError("Battery capacity cannot be empty")
+    num = _parse_int(value, "Battery capacity")
+    if num < 0:
+        raise ValidationError("Battery capacity must be non-negative")
+    return num
+
+def validate_target_soc_min(value) -> int:
+    if isinstance(value, str):
+        _validate_input(value, "Target SOC min")
+    elif value is None:
+        raise ValidationError("Target SOC min cannot be empty")
+    num = _parse_int(value, "Target SOC min")
+    if num < 0 or num > 100:
+        raise ValidationError("Target SOC min must be 0-100")
+    return num
+
+def validate_target_soc_max(value) -> int:
+    if isinstance(value, str):
+        _validate_input(value, "Target SOC max")
+    elif value is None:
+        raise ValidationError("Target SOC max cannot be empty")
+    num = _parse_int(value, "Target SOC max")
+    if num < 0 or num > 100:
+        raise ValidationError("Target SOC max must be 0-100")
+    return num
+
+def validate_mileage(value) -> int:
+    if isinstance(value, str):
+        _validate_input(value, "Mileage")
+    elif value is None:
+        raise ValidationError("Mileage cannot be empty")
+    num = _parse_int(value, "Mileage")
+    if num < 0:
+        raise ValidationError("Mileage must be non-negative")
+    return num

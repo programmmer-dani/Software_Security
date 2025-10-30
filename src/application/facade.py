@@ -3,7 +3,7 @@
 import secrets
 from src.application.use_cases.auth import login as auth_login, change_password as auth_change_password
 from src.application.security.acl import CurrentUser, require_admin, require_engineer_or_admin, require_super_admin
-from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude, validate_email, _validate_input
+from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude, validate_email, _validate_input, validate_house_number, validate_top_speed, validate_battery_capacity, validate_target_soc_min, validate_target_soc_max, validate_mileage
 from src.domain.errors import ValidationError
 from src.domain.constants import ROLES
 from src.domain.models import User, Traveller, RestoreCode
@@ -153,7 +153,7 @@ class App:
         birthday = validate_birthday(birthday)
         gender = validate_gender(gender)
         street = _validate_input(street, "Street")
-        house_no = _validate_input(house_no, "House number")
+        house_no = validate_house_number(house_no)
         zip_code = validate_zip(zip_code)
         city = validate_city(city)
         email = validate_email(email)
@@ -356,14 +356,14 @@ class App:
         brand = _validate_input(brand, "Brand")
         model = _validate_input(model, "Model")
         serial_number = _validate_input(serial_number, "Serial number")
-        top_speed = int(top_speed)
-        battery_capacity = int(battery_capacity)
+        top_speed = validate_top_speed(top_speed)
+        battery_capacity = validate_battery_capacity(battery_capacity)
         soc = validate_soc(soc)
-        target_soc_min = int(target_soc_min)
-        target_soc_max = int(target_soc_max)
+        target_soc_min = validate_target_soc_min(target_soc_min)
+        target_soc_max = validate_target_soc_max(target_soc_max)
         latitude = validate_latitude(latitude)
         longitude = validate_longitude(longitude)
-        mileage = int(mileage)
+        mileage = validate_mileage(mileage)
         last_maintenance_date = _validate_input(last_maintenance_date, "Last maintenance date")
         in_service_date = _validate_input(in_service_date, "In service date")
         status = _validate_input(status, "Status")
@@ -413,9 +413,9 @@ class App:
         if 'longitude' in kwargs:
             kwargs['longitude'] = validate_longitude(kwargs['longitude'])
         if 'max_speed' in kwargs:
-            kwargs['max_speed'] = int(kwargs['max_speed'])
+            kwargs['max_speed'] = validate_top_speed(kwargs['max_speed'])
         if 'battery_capacity' in kwargs:
-            kwargs['battery_capacity'] = int(kwargs['battery_capacity'])
+            kwargs['battery_capacity'] = validate_battery_capacity(kwargs['battery_capacity'])
 
         success = self.scooter_repo.update(scooter_id, **kwargs)
         
