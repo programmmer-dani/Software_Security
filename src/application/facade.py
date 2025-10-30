@@ -3,7 +3,7 @@
 import secrets
 from src.application.use_cases.auth import login as auth_login, change_password as auth_change_password
 from src.application.security.acl import CurrentUser, require_admin, require_engineer_or_admin, require_super_admin
-from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude, validate_email
+from src.domain.validators import validate_username, validate_password, validate_zip, validate_phone, validate_license, validate_gender, validate_city, validate_birthday, validate_soc, validate_latitude, validate_longitude, validate_email, _validate_input
 from src.domain.errors import ValidationError
 from src.domain.constants import ROLES
 from src.domain.models import User, Traveller, RestoreCode
@@ -533,18 +533,4 @@ class App:
         self.logger.log('service_engineer_password_reset', current_user.username_norm, 
                        {'engineer_username': validated_username}, False)
 
-def _validate_input(value: str, field: str) -> str:
-    if value is None:
-        raise ValidationError(f"{field} cannot be empty")
-    
-    value = str(value)
-    if not value:
-        raise ValidationError(f"{field} cannot be empty")
-    
-    if len(value) > 1000:
-        raise ValidationError(f"{field} is too long")
-    
-    if any(ord(char) < 32 or ord(char) == 127 for char in value):
-        raise ValidationError(f"{field} contains invalid characters")
-    
-    return value
+ 
